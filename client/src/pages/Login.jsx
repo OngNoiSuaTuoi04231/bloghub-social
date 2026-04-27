@@ -1,10 +1,11 @@
 import { useState } from "react";
+import axios from "axios";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -12,14 +13,28 @@ function Login() {
       return;
     }
 
-    alert("Đăng nhập thành công!");
-    console.log({
-      email,
-      password,
-    });
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        {
+          email,
+          password
+        }
+      );
 
-    setEmail("");
-    setPassword("");
+      alert(res.data.message);
+
+      // lưu token
+      localStorage.setItem("token", res.data.token);
+
+      console.log(res.data);
+
+      setEmail("");
+      setPassword("");
+
+    } catch (error) {
+      alert(error.response?.data?.message || "Đăng nhập thất bại");
+    }
   };
 
   return (

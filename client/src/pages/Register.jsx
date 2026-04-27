@@ -1,11 +1,12 @@
 import { useState } from "react";
+import axios from "axios";
 
 function Register() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
 
     if (!username || !email || !password) {
@@ -13,17 +14,25 @@ function Register() {
       return;
     }
 
-    alert("Đăng ký thành công!");
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/register",
+        {
+          username,
+          email,
+          password
+        }
+      );
 
-    console.log({
-      username,
-      email,
-      password,
-    });
+      alert(res.data.message);
 
-    setUsername("");
-    setEmail("");
-    setPassword("");
+      setUsername("");
+      setEmail("");
+      setPassword("");
+
+    } catch (error) {
+      alert(error.response?.data?.message || "Đăng ký thất bại");
+    }
   };
 
   return (
