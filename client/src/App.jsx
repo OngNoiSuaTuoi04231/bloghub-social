@@ -1,12 +1,18 @@
-// import Login from "./pages/Login";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 function App() {
-  // Lệnh return phải nằm TRONG dấu ngoặc nhọn của hàm
   return (
     <>
-      <h1 className="text-3xl font-bold underline text-blue-600">
-        Hello world!
-      </h1>
+      <BrowserRouter>
+        <Routes>
+        <Route path="/" element={<Login />} />
+          <Route path="/Login" element={<Login />} />
+          <Route path="/Register" element={<Register />} />
+        </Routes>
+      </BrowserRouter>
+
     </>
   );
 }
