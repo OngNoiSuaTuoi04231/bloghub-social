@@ -1,19 +1,52 @@
+import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import CreatePost from "./pages/CreatePost";
+import Home from "./pages/Home";
+import Profile from "./pages/Profile";
+
+import Layout from "./components/Layout";
+import { DarkModeProvider } from "./context/DarkModeContext";
+
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
+
+function AnimatedRoutes() {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+
+        {/* Default */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
+        {/* Không có Header */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* USER pages */}
+        <Route element={<Layout />}>
+          <Route path="/home" element={<Home />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/createpost" element={<CreatePost />} />
+        </Route>
+
+        {/* ADMIN page riêng */}
+        <Route path="/admin" element={<Admin />} />
+
+      </Routes>
+    </AnimatePresence>
+  );
+}
 
 function App() {
   return (
-    <>
+    <DarkModeProvider>
       <BrowserRouter>
-        <Routes>
-        <Route path="/" element={<Login />} />
-          <Route path="/Login" element={<Login />} />
-          <Route path="/Register" element={<Register />} />
-        </Routes>
+        <AnimatedRoutes />
       </BrowserRouter>
-
-    </>
+    </DarkModeProvider>
   );
 }
 
