@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useDarkMode } from "../context/DarkModeContext";
+import Comment from "../components/Comment";
 
 const API = "http://localhost:5000/api";
 
@@ -602,41 +603,19 @@ function PostCard({ post, dark, currentUserId, onEdit, onDelete }) {
       </div>
 
       {showCmt && (
-        <div className={`px-4 pb-4 border-t ${dark ? "border-violet-900/60" : "border-gray-50"}`}>
-          <div
-            className={`flex items-center gap-2.5 mt-3 rounded-2xl px-3 py-2.5 border
-            ${dark ? "bg-[#1e1535] border-violet-800" : "bg-gray-50 border-gray-200"}`}
-          >
-            <MI
-              name="chat_bubble_outline"
-              className={`text-[17px] flex-shrink-0 ${dark ? "text-violet-700" : "text-gray-400"}`}
-            />
+  <div
+    className={`px-4 pb-4 border-t ${
+      dark ? "border-violet-900/60" : "border-gray-50"
+    }`}
+  >
+    <Comment
+      postId={post._id}
+      dark={dark}
+    />
+  </div>
+)}
 
-            <input
-              type="text"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Viết bình luận..."
-              className={`flex-1 bg-transparent text-[13px] outline-none
-                ${dark ? "text-violet-200 placeholder-violet-700" : "text-gray-700 placeholder-gray-400"}`}
-            />
 
-            <button
-              type="button"
-              onClick={() => {
-                if (comment.trim()) {
-                  toast("Đã gửi bình luận");
-                  setComment("");
-                }
-              }}
-              className={`transition-all active:scale-90
-                ${dark ? "text-violet-400 hover:text-violet-200" : "text-indigo-400 hover:text-indigo-600"}`}
-            >
-              <MI name="send" className="text-[18px]" />
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
