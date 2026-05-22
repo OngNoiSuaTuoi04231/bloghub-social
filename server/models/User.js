@@ -20,6 +20,13 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
+    // THÊM ĐOẠN NÀY
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+
     avatar: {
       type: String,
       default: "",
