@@ -363,7 +363,7 @@ function PostCard({ post, dark, currentUserId, onEdit, onDelete }) {
   const [saved, setSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes ?? 0);
   const [showCmt, setShowCmt] = useState(false);
-  const [comment, setComment] = useState("");
+  // const [comment, setComment] = useState("");
 
   const isOwner =
     currentUserId &&
@@ -758,9 +758,9 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="flex items-center gap-2">
-              <DarkToggle dark={dark} onToggle={toggleDark} />
-            </div>
+            <div className="ml-auto flex items-center gap-2">
+  <DarkToggle dark={dark} onToggle={toggleDark} />
+</div>
           </div>
 
           <div className="flex md:hidden items-center gap-1 pb-2.5">
