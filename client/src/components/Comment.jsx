@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_BASE = "http://localhost:5000";
 
 function formatTime(dateString) {
   if (!dateString) return "Vừa xong";
@@ -23,7 +23,6 @@ function Comment({ postId, dark }) {
     if (!postId) return;
 
     const socket = io(API_BASE);
-
     socket.emit("join_post_room", postId);
 
     socket.on("new_comment_received", (newComment) => {
@@ -35,9 +34,7 @@ function Comment({ postId, dark }) {
     fetch(`${API_BASE}/api/posts/${postId}/comments`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.success) {
-          setComments(data.comments);
-        }
+        if (data.success) setComments(data.comments);
       })
       .catch((err) => console.error("Lỗi lấy comment:", err));
 
@@ -49,7 +46,6 @@ function Comment({ postId, dark }) {
 
   const handleSubmitComment = async (e) => {
     e.preventDefault();
-
     if (!content.trim()) return;
 
     const token = localStorage.getItem("token");
@@ -61,9 +57,7 @@ function Comment({ postId, dark }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          content,
-        }),
+        body: JSON.stringify({ content }),
       });
 
       const data = await res.json();
@@ -78,7 +72,6 @@ function Comment({ postId, dark }) {
 
   return (
     <div className="mt-4">
-      {/* Input */}
       <form onSubmit={handleSubmitComment} className="mb-4">
         <div
           className={`flex items-center gap-2 rounded-2xl px-3 py-2 border transition-all duration-300
@@ -110,14 +103,11 @@ function Comment({ postId, dark }) {
                 : "text-indigo-500 hover:text-indigo-700"
             }`}
           >
-            <span className="material-icons-round text-[20px]">
-              send
-            </span>
+            <span className="material-icons-round text-[20px]">send</span>
           </button>
         </div>
       </form>
 
-      {/* Comments */}
       <div className="flex flex-col gap-3">
         {comments.length === 0 ? (
           <p
@@ -171,7 +161,6 @@ function CommentItem({ comment, postId, dark }) {
 
   const handleReply = async (e) => {
     e.preventDefault();
-
     if (!replyText.trim()) return;
 
     const token = localStorage.getItem("token");
@@ -204,7 +193,6 @@ function CommentItem({ comment, postId, dark }) {
 
   return (
     <div className="pl-3 border-l border-violet-200/40">
-      {/* Comment */}
       <div
         className={`rounded-2xl px-4 py-3 transition-all duration-300
         ${dark ? "bg-[#1e1535]" : "bg-gray-50"}`}
@@ -233,7 +221,6 @@ function CommentItem({ comment, postId, dark }) {
         </p>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-4 mt-1 ml-2">
         <button
           type="button"
@@ -266,7 +253,6 @@ function CommentItem({ comment, postId, dark }) {
         )}
       </div>
 
-      {/* Reply Form */}
       {openReply && (
         <form onSubmit={handleReply} className="mt-2 ml-2">
           <div
@@ -299,15 +285,12 @@ function CommentItem({ comment, postId, dark }) {
                   : "text-indigo-500 hover:text-indigo-700"
               }`}
             >
-              <span className="material-icons-round text-[18px]">
-                send
-              </span>
+              <span className="material-icons-round text-[18px]">send</span>
             </button>
           </div>
         </form>
       )}
 
-      {/* Replies */}
       {showReplies && replies.length > 0 && (
         <div className="flex flex-col gap-3 mt-3 ml-3">
           {replies.map((reply) => (

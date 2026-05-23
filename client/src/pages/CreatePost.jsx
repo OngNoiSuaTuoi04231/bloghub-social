@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-
 import toast from "react-hot-toast";
 import CameraCapture from "../components/CameraCapture";
 import VoiceRecorder from "../components/VoiceRecorder";
 import { useDarkMode } from "../context/DarkModeContext";
+
+const SERVER_URL = "http://localhost:5000";
 
 function MI({ name, className = "" }) {
   return (
@@ -14,17 +15,16 @@ function MI({ name, className = "" }) {
   );
 }
 
-function VisibilitySelect({ dark }) {
+function VisibilitySelect({ dark, onChange }) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState("Public");
+  const ref = useRef();
 
   const options = [
     { label: "Public", icon: "public" },
     { label: "Friends", icon: "group" },
     { label: "Private", icon: "lock" },
   ];
-
-  const ref = useRef();
 
   useEffect(() => {
     const handler = (e) => {
@@ -34,6 +34,12 @@ function VisibilitySelect({ dark }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  const handleSelect = (label) => {
+    setSelected(label);
+    setOpen(false);
+    if (onChange) onChange(label);
+  };
 
   return (
     <div className="relative" ref={ref}>
@@ -66,10 +72,7 @@ function VisibilitySelect({ dark }) {
             <button
               key={label}
               type="button"
-              onClick={() => {
-                setSelected(label);
-                setOpen(false);
-              }}
+              onClick={() => handleSelect(label)}
               className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-[13px] font-medium transition-colors
                 ${
                   selected === label
@@ -121,6 +124,7 @@ export default function CreatePost() {
   const [mediaFile, setMediaFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [mediaType, setMediaType] = useState("text");
+  const [visibility, setVisibility] = useState("Public");
   const [isLoading, setIsLoading] = useState(false);
 
   const [activeTab, setActiveTab] = useState("photo");
@@ -146,7 +150,7 @@ export default function CreatePost() {
 
   const handlePost = async () => {
     if (!content && !mediaFile) {
-      toast.error("Vui lòng nhập nội dung!");
+      toast.error("Vui lòng nhập nội dung hoặc đính kèm media!");
       return;
     }
 
@@ -163,16 +167,16 @@ export default function CreatePost() {
     const formData = new FormData();
     formData.append("content", content);
     formData.append("mediaType", mediaType);
-    formData.append("visibility", "Public");
+    formData.append("visibility", visibility);
     formData.append("studyMode", "false");
-    formData.append("tags", JSON.stringify(["React", "MERN"]));
+    formData.append("tags", JSON.stringify([]));
 
     if (mediaFile) {
       formData.append("media", mediaFile);
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/posts/create", {
+      const res = await fetch(`${SERVER_URL}/api/posts/create`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -188,6 +192,7 @@ export default function CreatePost() {
         setMediaFile(null);
         setPreview(null);
         setMediaType("text");
+        setVisibility("Public");
         navigate("/home");
       } else {
         toast.error("Lỗi: " + data.message);
@@ -343,7 +348,7 @@ export default function CreatePost() {
                 </div>
               </div>
 
-              <VisibilitySelect dark={dark} />
+              <VisibilitySelect dark={dark} onChange={setVisibility} />
             </div>
 
             <div className="px-4 pt-2 pb-3">
