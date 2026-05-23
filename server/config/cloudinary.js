@@ -1,10 +1,12 @@
 const cloudinary = require("cloudinary").v2;
-require("dotenv").config();
 
+// ============================================================
+// CLOUDINARY — Hardcode theo style của Leader (không dùng .env)
+// ============================================================
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: "daxz2sem9",
+  api_key: "769972498452276",
+  api_secret: "XmITydy633H6tcGL9KSUNv5OmEQ",
 });
 
 module.exports = cloudinary;

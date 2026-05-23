@@ -2,57 +2,65 @@ const express = require("express");
 const router = express.Router();
 const Post = require("../models/Post");
 const Comment = require("../models/Comment");
-const upload = require("../middleware/upload"); // Trình tiếp quản upload file của nhóm
-const verifyToken = require("../middleware/auth"); // Lá chắn verify token bảo mật toàn cục từ Member 2
+const User = require("../models/User");
+const upload = require("../middleware/upload");
+const verifyToken = require("../middleware/auth");
 
-// =========================================================================
-// 1. LẤY DANH SÁCH BÀI VIẾT (TRANG CHỦ FEED)
-// =========================================================================
-router.get("/", async (req, res, next) => {
+// ============================================================
+// 1. LẤY DANH SÁCH BÀI VIẾT — TRANG CHỦ FEED
+//    GET /api/posts
+//    Query: ?page=1&limit=10
+// ============================================================
+router.get("/", async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
 
-    // Lấy các bài viết công khai, thực hiện populate thông tin User để tránh lỗi N+1 Query ngoài trang chủ
     const posts = await Post.find({ visibility: "Public" })
-      .populate("userId", "username avatar bio") // Khớp nối với bảng User để lấy đầy đủ hình ảnh/tên sinh viên
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      // populate để lấy username + avatar của người đăng
+      .populate("userId", "username avatar bio");
 
     res.status(200).json({ success: true, posts });
   } catch (error) {
-    next(error);
+    console.log("Lỗi lấy feed:", error.message);
+    res.status(500).json({ success: false, message: "Lỗi server" });
   }
 });
 
-// =========================================================================
-// 2. TẠO BÀI VIẾT MỚI (HỖ TRỢ ĐÍNH KÈM LOCKET IMAGE / AUDIO NOTE)
-// =========================================================================
+// ============================================================
+// 2. TẠO BÀI VIẾT MỚI — CÓ HỖ TRỢ UPLOAD ẢNH / AUDIO
+//    POST /api/posts/create
+//    Headers: Authorization: Bearer <token>
+//    Body: FormData (content, mediaType, visibility, media file)
+// ============================================================
 router.post(
   "/create",
   verifyToken,
   upload.single("media"),
-  async (req, res, next) => {
+  async (req, res) => {
     try {
       const { content, mediaType, audioDuration, tags, visibility, studyMode } =
         req.body;
 
+      // Parse tags từ JSON string (frontend gửi JSON.stringify([...]))
       let parsedTags = [];
       if (tags) {
         try {
           parsedTags = JSON.parse(tags);
-        } catch (e) {
+        } catch {
           parsedTags = [];
         }
       }
 
       const newPost = new Post({
-        userId: req.user.id || req.user._id, // Đồng bộ hóa ObjectId sạch đã được verifyToken bóc tách
-        content,
+        userId: req.user.id, // từ JWT token
+        content: content || "",
         mediaType: mediaType || (req.file ? "image_locket" : "text"),
-        mediaUrl: req.file ? req.file.path : "", // Đường dẫn trực tiếp từ kho lưu trữ đám mây Cloudinary
-        audioDuration,
+        mediaUrl: req.file ? req.file.path : "", // Link Cloudinary
+        audioDuration: audioDuration || "0:00",
         tags: parsedTags,
         visibility: visibility || "Public",
         studyMode: studyMode === "true",
@@ -60,85 +68,171 @@ router.post(
 
       await newPost.save();
 
-      // Nạp trước dữ liệu người dùng vừa tạo để trả về Frontend render ngay lập tức không cần ép tải lại trang
-      const populatedPost = await Post.findById(newPost._id).populate(
-        "userId",
-        "username avatar bio",
-      );
+      // populate trước khi trả về để frontend có ngay username + avatar
+      await newPost.populate("userId", "username avatar bio");
 
-      res.status(201).json({ success: true, post: populatedPost });
+      res.status(201).json({ success: true, post: newPost });
     } catch (error) {
-      next(error);
+      console.log("Lỗi tạo bài:", error.message);
+      res.status(500).json({ success: false, message: "Lỗi server" });
     }
   },
 );
 
-// =========================================================================
-// 3. TẠO BÌNH LUẬN HOẶC PHẢN HỒI CON (REPLY ĐỆ QUY) - ĐÃ BẢO MẬT
-// =========================================================================
-router.post("/:postId/comments", verifyToken, async (req, res, next) => {
+// ============================================================
+// 3. LIKE / UNLIKE BÀI VIẾT
+//    PUT /api/posts/:id/like
+//    Headers: Authorization: Bearer <token>
+// ============================================================
+router.put("/:id/like", verifyToken, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy bài viết" });
+    }
+
+    const userId = req.user.id.toString();
+    const idx = post.likedBy.findIndex((id) => id.toString() === userId);
+
+    if (idx === -1) {
+      // Chưa like → thêm like
+      post.likedBy.push(req.user.id);
+      post.likeCount += 1;
+    } else {
+      // Đã like → bỏ like
+      post.likedBy.splice(idx, 1);
+      post.likeCount = Math.max(0, post.likeCount - 1);
+    }
+
+    await post.save();
+
+    res.json({
+      success: true,
+      likeCount: post.likeCount,
+      liked: idx === -1, // true = vừa like, false = vừa bỏ like
+    });
+  } catch (error) {
+    console.log("Lỗi like:", error.message);
+    res.status(500).json({ success: false, message: "Lỗi server" });
+  }
+});
+
+// ============================================================
+// 4. XOÁ BÀI VIẾT
+//    DELETE /api/posts/:id
+//    Headers: Authorization: Bearer <token>
+// ============================================================
+router.delete("/:id", verifyToken, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy bài viết" });
+    }
+
+    // Chỉ người đăng bài mới được xoá
+    if (post.userId.toString() !== req.user.id.toString()) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Không có quyền xoá" });
+    }
+
+    await Post.findByIdAndDelete(req.params.id);
+    // Xoá luôn toàn bộ comment của bài viết
+    await Comment.deleteMany({ postId: req.params.id });
+
+    res.json({ success: true, message: "Đã xoá bài viết" });
+  } catch (error) {
+    console.log("Lỗi xoá bài:", error.message);
+    res.status(500).json({ success: false, message: "Lỗi server" });
+  }
+});
+
+// ============================================================
+// 5. GỬI BÌNH LUẬN / REPLY
+//    POST /api/posts/:postId/comments
+//    Headers: Authorization: Bearer <token>
+//    Body: { content, parentId? }
+//
+//    ⚠️  authorName được lấy từ DB (theo userId trong token)
+//        KHÔNG nhận từ client — tránh giả mạo tên
+// ============================================================
+router.post("/:postId/comments", verifyToken, async (req, res) => {
   try {
     const { postId } = req.params;
     const { content, parentId } = req.body;
 
-    // Kiểm tra xem bài viết mục tiêu có tồn tại thực tế hay không
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy bài viết trên hệ thống!",
-      });
+    if (!content || !content.trim()) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Nội dung không được trống" });
     }
 
-    // Đóng gói thực thể bình luận mới lấy thông tin chính chủ từ Token xác thực
+    // Kiểm tra bài viết tồn tại
+    const post = await Post.findById(postId);
+    if (!post) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy bài viết" });
+    }
+
+    // Lấy tên user từ DB (token chỉ chứa id)
+    const user = await User.findById(req.user.id).select("username avatar");
+    const authorName = user ? user.username : "Người dùng";
+
     const newComment = new Comment({
       postId,
-      content,
-      authorId: req.user.id || req.user._id, // Ghi nhận ID tài khoản chính xác
-      authorName: req.user.username || "Ẩn danh", // Tên thật của sinh viên lưu từ LocalStorage qua Token
-      parentId: parentId || null, // Nếu có ID cha, cấu trúc cây đệ quy sẽ tự động kích hoạt
+      authorId: req.user.id,
+      authorName,
+      content: content.trim(),
+      parentId: parentId || null,
     });
 
     await newComment.save();
 
-    // Thực hiện cập nhật bộ đếm tĩnh tăng 1 đơn vị
+    // Cập nhật bộ đếm
     if (parentId) {
       await Comment.findByIdAndUpdate(parentId, { $inc: { replyCount: 1 } });
     }
-    // Tăng trường commentCount đồng bộ với giao diện thẻ bài viết Home.jsx của Member 1
     await Post.findByIdAndUpdate(postId, { $inc: { commentCount: 1 } });
 
-    // Kích hoạt cổng phát sóng thời gian thực Socket.io nếu Client đang kết nối trực tiếp
+    // Phát real-time qua Socket.io (req.io được inject bởi server/index.js)
     if (req.io) {
       req.io.to(`post_${postId}`).emit("new_comment_received", newComment);
     }
 
     res.status(201).json({ success: true, comment: newComment });
   } catch (error) {
-    next(error);
+    console.log("Lỗi comment:", error.message);
+    res.status(500).json({ success: false, message: "Lỗi server" });
   }
 });
 
-// =========================================================================
-// 4. LẤY DANH SÁCH BÌNH LUẬN CỦA BÀI VIẾT (PHÂN TÁCH CẤP CHA - CON ĐỆ QUY)
-// =========================================================================
-router.get("/:postId/comments", async (req, res, next) => {
+// ============================================================
+// 6. LẤY DANH SÁCH BÌNH LUẬN CỦA BÀI VIẾT
+//    GET /api/posts/:postId/comments
+//    Query: ?parentId=null  (lấy comment gốc)
+//           ?parentId=<id>  (lấy reply của comment đó)
+// ============================================================
+router.get("/:postId/comments", async (req, res) => {
   try {
     const { postId } = req.params;
-    const { parentId = null } = req.query;
+    const { parentId } = req.query;
 
-    // Xử lý bộ lọc thông minh: Nếu parentId truyền lên là chuỗi 'null' hoặc rỗng thì mặc định tìm bình luận gốc (null)
     const query = {
       postId,
-      parentId: parentId === "null" || !parentId ? null : parentId,
+      parentId: !parentId || parentId === "null" ? null : parentId,
     };
 
-    // Sắp xếp bình luận mới nhất đẩy lên đầu luồng thảo luận
     const comments = await Comment.find(query).sort({ createdAt: -1 });
 
     res.status(200).json({ success: true, comments });
   } catch (error) {
-    next(error);
+    console.log("Lỗi lấy comment:", error.message);
+    res.status(500).json({ success: false, message: "Lỗi server" });
   }
 });
 

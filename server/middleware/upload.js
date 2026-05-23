@@ -1,29 +1,32 @@
 const multer = require("multer");
-const { CloudinaryStorage } = require("multer-storage-cloudinary"); // Chắc chắn phải có dấu { }
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("../config/cloudinary");
 
+// ============================================================
+// MULTER + CLOUDINARY STORAGE
+// Tự động upload file lên Cloudinary khi nhận request
+// ============================================================
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: "bloghub_media",
-    // Cho phép upload cả ảnh và file âm thanh
+    folder: "bloghub_media", // Tên folder trên Cloudinary
+    resource_type: "auto", // Tự nhận dạng: ảnh / audio
     allowed_formats: [
       "jpg",
-      "png",
       "jpeg",
-      "webp",
+      "png",
+      "webp", // Ảnh
       "mp3",
       "wav",
       "webm",
-      "ogg",
+      "ogg", // Âm thanh
     ],
-    resource_type: "auto",
   },
 });
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // Giới hạn 10MB
+  limits: { fileSize: 10 * 1024 * 1024 }, // Giới hạn 10 MB
 });
 
 module.exports = upload;
