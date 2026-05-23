@@ -10,7 +10,7 @@ const dns = require("dns");
 dns.setDefaultResultOrder("ipv4first");
 
 const uri =
-  "mongodb://nguyenthanhtrung21122005_db_user:123456788@clusterttrunghinni-shard-00-00.bpilvrv.mongodb.net:27017,clusterttrunghinni-shard-00-01.bpilvrv.mongodb.net:27017,...?ssl=true&replicaSet=...&authSource=adminmongodb+srv://nguyenthanhtrung21122005_db_user:123456788@clusterttrunghinni.bpilvrv.mongodb.net/?appName=Clusterttrunghinni";
+  "mongodb://nguyenthanhtrung21122005_db_user:123456788@ac-igfq4xb-shard-00-00.bpilvrv.mongodb.net:27017,ac-igfq4xb-shard-00-01.bpilvrv.mongodb.net:27017,ac-igfq4xb-shard-00-02.bpilvrv.mongodb.net:27017/?ssl=true&replicaSet=atlas-te26yc-shard-0&authSource=admin&appName=Clusterttrunghinni";
 
 mongoose
   .connect(uri, {
