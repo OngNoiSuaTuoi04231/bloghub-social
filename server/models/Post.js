@@ -13,46 +13,51 @@ const postSchema = new mongoose.Schema(
       default: "",
     },
 
-    image: {
+    mediaUrl: {
       type: String,
       default: "",
     },
 
-    video: {
+    mediaType: {
       type: String,
-      default: "",
+      default: "text",
     },
 
-    audio: {
+    visibility: {
       type: String,
-      default: "",
+      default: "Public",
     },
 
-    likes: [
+    tags: [{ type: String }],
+
+    audioDuration: {
+      type: String,
+      default: "0:00",
+    },
+
+    studyMode: {
+      type: Boolean,
+      default: false,
+    },
+
+    likedBy: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
 
-    comments: [
-      {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-        },
-        text: {
-          type: String,
-          default: "",
-        },
-        createdAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
+    likeCount: {
+      type: Number,
+      default: 0,
+    },
+
+    commentCount: {
+      type: Number,
+      default: 0,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Post", postSchema);
