@@ -7,7 +7,6 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-
 // ======================
 // REGISTER
 // ======================
@@ -19,7 +18,7 @@ router.post("/register", async (req, res) => {
 
     if (checkUser) {
       return res.status(400).json({
-        message: "Email đã tồn tại"
+        message: "Email đã tồn tại",
       });
     }
 
@@ -28,22 +27,20 @@ router.post("/register", async (req, res) => {
     const newUser = new User({
       username,
       email,
-      password: hashedPassword
+      password: hashedPassword,
     });
 
     await newUser.save();
 
     res.status(201).json({
-      message: "Đăng ký thành công"
+      message: "Đăng ký thành công",
     });
-
   } catch (error) {
     res.status(500).json({
-      message: "Lỗi server"
+      message: "Lỗi server",
     });
   }
 });
-
 
 // ======================
 // LOGIN
@@ -56,7 +53,7 @@ router.post("/login", async (req, res) => {
 
     if (!user) {
       return res.status(400).json({
-        message: "Không tìm thấy user"
+        message: "Không tìm thấy user",
       });
     }
 
@@ -64,16 +61,14 @@ router.post("/login", async (req, res) => {
 
     if (!isMatch) {
       return res.status(400).json({
-        message: "Sai mật khẩu"
+        message: "Sai mật khẩu",
       });
     }
 
     // tạo token
-    const token = jwt.sign(
-      { id: user._id },
-      "bloghub_secret",
-      { expiresIn: "7d" }
-    );
+    const token = jwt.sign({ id: user._id }, "bloghub_secret", {
+      expiresIn: "7d",
+    });
 
     // ẩn password
     const { password: _, ...userSafe } = user._doc;
@@ -81,16 +76,14 @@ router.post("/login", async (req, res) => {
     res.json({
       message: "Đăng nhập thành công",
       token,
-      user: userSafe
+      user: userSafe,
     });
-
   } catch (error) {
     res.status(500).json({
-      message: "Lỗi server"
+      message: "Lỗi server",
     });
   }
 });
-
 
 // ======================
 // PROFILE
@@ -101,15 +94,13 @@ router.get("/profile", authMiddleware, async (req, res) => {
 
     res.json({
       message: "Thông tin user",
-      user
+      user,
     });
-
   } catch (error) {
     res.status(500).json({
-      message: "Lỗi server"
+      message: "Lỗi server",
     });
   }
 });
-
 
 module.exports = router;
