@@ -7,35 +7,44 @@ const postSchema = new mongoose.Schema(
       ref: "User",
       required: false,
     },
+
     content: {
       type: String,
       default: "",
     },
+
     image: {
       type: String,
       default: "",
     },
+
     video: {
       type: String,
       default: "",
     },
+
     audio: {
       type: String,
       default: "",
     },
+
     likes: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
+
     comments: [
       {
         user: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "User",
         },
-        text: String,
+        text: {
+          type: String,
+          default: "",
+        },
         createdAt: {
           type: Date,
           default: Date.now,
