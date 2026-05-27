@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 
 export default function CameraCapture({ onCapture, onCancel }) {
   const videoRef = useRef(null);
@@ -10,28 +10,28 @@ export default function CameraCapture({ onCapture, onCancel }) {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: true,
       });
-
       setStream(mediaStream);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-      }
+      // Đã xoá đoạn gán videoRef ở đây vì gán lúc này là quá sớm (sẽ bị null)
     } catch (err) {
       alert("Không thể truy cập Camera!");
     }
   };
 
+  // THÊM MỚI: Chỉ gán stream vào videoRef khi thẻ <video> ĐÃ HIỂN THỊ trên màn hình
+  useEffect(() => {
+    if (stream && videoRef.current) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
   const stopCamera = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
     }
-
     setStream(null);
-
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-
     if (onCancel) {
       onCancel();
     }
@@ -53,8 +53,7 @@ export default function CameraCapture({ onCapture, onCancel }) {
 
     canvas.toBlob((blob) => {
       if (!blob) return;
-
-      const file = new File([blob], "locket_capture.jpg", {
+      const file = new File([blob], `locket_capture_${Date.now()}.jpg`, {
         type: "image/jpeg",
       });
 
@@ -63,8 +62,24 @@ export default function CameraCapture({ onCapture, onCancel }) {
     }, "image/jpeg");
   }, [onCapture, stopCamera]);
 
+  // Đảm bảo dọn dẹp camera khi người dùng đóng component đột ngột
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [stream]);
+
   return (
-    <div style={{ background: "#000", borderRadius: 14, overflow: "hidden", padding: 10 }}>
+    <div
+      style={{
+        background: "#000",
+        borderRadius: 14,
+        overflow: "hidden",
+        padding: 10,
+      }}
+    >
       {!stream ? (
         <button
           type="button"
@@ -85,6 +100,7 @@ export default function CameraCapture({ onCapture, onCancel }) {
             ref={videoRef}
             autoPlay
             playsInline
+            muted
             style={{ width: "100%", borderRadius: 8 }}
           />
 

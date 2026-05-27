@@ -7,19 +7,35 @@ const commentSchema = new mongoose.Schema(
       ref: "Post",
       required: true,
     },
-
-    userId: {
+    // Sửa userId thành authorId cho khớp với postRoutes.js
+    authorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
-    text: {
+    // Thêm tên người bình luận để hiển thị
+    authorName: {
+      type: String,
+      default: "Người dùng",
+    },
+    // Sửa text thành content cho khớp với Frontend
+    content: {
       type: String,
       required: true,
     },
+    // Thêm hỗ trợ Reply (bình luận con)
+    parentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Comment",
+      default: null,
+    },
+    // Bộ đếm số lượng trả lời
+    replyCount: {
+      type: Number,
+      default: 0,
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Comment", commentSchema);
