@@ -127,7 +127,7 @@ function PostMenu({ dark, isOwner, onEdit, onDelete }) {
                 }`}
             >
               <MI name="edit" className="text-[16px]" />
-              Chỉnh sửa
+              Edit
             </button>
           )}
 
@@ -146,11 +146,11 @@ function PostMenu({ dark, isOwner, onEdit, onDelete }) {
                 }`}
             >
               <MI name="delete" className="text-[16px]" />
-              Xóa bài viết
+              Delete Post
             </button>
           )}
 
-          <button
+          {/* <button
             type="button"
             onClick={() => {
               toast("Đã gửi báo cáo");
@@ -165,7 +165,7 @@ function PostMenu({ dark, isOwner, onEdit, onDelete }) {
           >
             <MI name="flag" className="text-[16px]" />
             Báo cáo
-          </button>
+          </button> */}
         </div>
       )}
     </div>
@@ -320,7 +320,6 @@ function SkeletonCard({ dark }) {
     >
       <div className="flex gap-3 mb-4">
         <div className={`w-10 h-10 rounded-full flex-shrink-0 ${dark ? "bg-violet-900/50" : "bg-gray-100"}`} />
-
         <div className="flex-1 flex flex-col gap-2 justify-center">
           <div className={`h-3 w-28 rounded-full ${dark ? "bg-violet-900/50" : "bg-gray-100"}`} />
           <div className={`h-2.5 w-20 rounded-full ${dark ? "bg-violet-900/30" : "bg-gray-50"}`} />
@@ -358,17 +357,17 @@ function EmptyState({ dark }) {
   );
 }
 
-function PostCard({ post, dark, currentUserId, onEdit, onDelete }) {
-  const [liked, setLiked] = useState(false);
+function PostCard({ post, dark, currentUserId, onEdit, onDelete, onOpenProfile }) {
+  const [liked, setLiked] = useState(
+    post.likedBy?.some((id) => String(id) === String(currentUserId)) || false
+  );
   const [saved, setSaved] = useState(false);
-  const [likeCount, setLikeCount] = useState(post.likes ?? 0);
+  const [likeCount, setLikeCount] = useState(post.likeCount ?? post.likes ?? 0);
   const [showCmt, setShowCmt] = useState(false);
-  // const [comment, setComment] = useState("");
 
   const isOwner =
     currentUserId &&
-    (String(post.userId) === String(currentUserId) ||
-      String(post.userId?._id) === String(currentUserId));
+    String(post.user?._id || post.user) === String(currentUserId);
 
   const timeLabel = post.createdAt
     ? new Date(post.createdAt).toLocaleString("vi-VN", {
@@ -379,10 +378,26 @@ function PostCard({ post, dark, currentUserId, onEdit, onDelete }) {
       })
     : "";
 
-  const handleLike = () => {
-    setLiked((p) => !p);
-    setLikeCount((p) => (liked ? p - 1 : p + 1));
-  };
+    const handleLike = async () => {
+      try {
+        const token = localStorage.getItem("token");
+    
+        const res = await axios.put(
+          `${API}/posts/${post._id}/like`,
+          {},
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+    
+        setLiked(res.data.liked);
+        setLikeCount(res.data.likeCount);
+      } catch (error) {
+        toast.error("Like thất bại");
+      }
+    };
 
   return (
     <div
@@ -395,19 +410,30 @@ function PostCard({ post, dark, currentUserId, onEdit, onDelete }) {
     >
       <div className="flex items-start justify-between px-4 pt-4 pb-3">
         <div className="flex items-center gap-3">
-          <Avatar
-            username={post.username || post.userId?.username || ""}
-            avatarUrl={
-              String(post.userId?._id || post.userId) === String(currentUserId)
-                ? localStorage.getItem("avatar")
-                : post.userId?.avatar || null
-            }
-          />
+        <button
+  type="button"
+  onClick={() => onOpenProfile(post.user?._id || post.user)}
+  className="cursor-pointer"
+>
+  <Avatar
+    username={post.user?.username || post.username || ""}
+    avatarUrl={
+      String(post.user?._id || post.user) === String(currentUserId)
+        ? localStorage.getItem("avatar")
+        : post.user?.avatar || null
+    }
+  />
+</button>
 
           <div>
-            <p className={`font-bold text-[14px] leading-tight ${dark ? "text-white" : "text-gray-900"}`}>
-              {post.username || post.userId?.username || "User name"}
-            </p>
+          <p
+  onClick={() => onOpenProfile(post.user?._id || post.user)}
+  className={`font-bold text-[14px] leading-tight cursor-pointer hover:underline ${
+    dark ? "text-white" : "text-gray-900"
+  }`}
+>
+  {post.user?.username || post.username || "User name"}
+</p>
 
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className={`text-[11.5px] ${dark ? "text-violet-500" : "text-gray-400"}`}>
@@ -568,10 +594,10 @@ function PostCard({ post, dark, currentUserId, onEdit, onDelete }) {
               }`}
           >
             <MI name="chat_bubble_outline" className="text-[18px]" />
-            {post.comments > 0 && post.comments}
+            {post.commentCount > 0 && post.commentCount}
           </button>
 
-          <button
+          {/* <button
             type="button"
             onClick={() => {
               navigator.clipboard?.writeText(`${window.location.origin}/post/${post._id}`);
@@ -581,10 +607,10 @@ function PostCard({ post, dark, currentUserId, onEdit, onDelete }) {
               ${dark ? "text-violet-500 hover:bg-violet-900/30" : "text-gray-500 hover:bg-gray-50"}`}
           >
             <MI name="share" className="text-[18px]" />
-          </button>
+          </button> */}
         </div>
 
-        <button
+        {/* <button
           type="button"
           onClick={() => setSaved((p) => !p)}
           className={`px-3 py-2 rounded-xl transition-all duration-200 active:scale-90
@@ -599,29 +625,29 @@ function PostCard({ post, dark, currentUserId, onEdit, onDelete }) {
             }`}
         >
           <MI name={saved ? "bookmark" : "bookmark_border"} className="text-[20px]" />
-        </button>
+        </button> */}
       </div>
 
       {showCmt && (
-  <div
-    className={`px-4 pb-4 border-t ${
-      dark ? "border-violet-900/60" : "border-gray-50"
-    }`}
-  >
-    <Comment
-      postId={post._id}
-      dark={dark}
-    />
-  </div>
-)}
-
-
+        <div
+          className={`px-4 pb-4 border-t ${
+            dark ? "border-violet-900/60" : "border-gray-50"
+          }`}
+        >
+          <Comment postId={post._id} dark={dark} />
+        </div>
+      )}
     </div>
   );
 }
 
 export default function Home() {
   const navigate = useNavigate();
+
+  const openUserProfile = (userId) => {
+    if (!userId) return;
+    navigate(`/profile/${userId}`);
+  };
   const { dark, toggleDark } = useDarkMode();
 
   const [posts, setPosts] = useState([]);
@@ -635,20 +661,33 @@ export default function Home() {
 
   const currentUserId = localStorage.getItem("userId");
 
-  const fetchPosts = async (pageNum = 1, replace = true) => {
+  const fetchPosts = async (pageNum = 1, replace = true, tab = activeTab) => {
     try {
       replace ? setLoading(true) : setLoadingMore(true);
-
+  
       const token = localStorage.getItem("token");
-
-      const res = await axios.get(`${API}/posts?page=${pageNum}&limit=10`, {
+      const currentUserId = localStorage.getItem("userId");
+  
+      const url =
+      tab === "mine"
+        ? `${API}/posts/me`
+        : `${API}/posts?page=${pageNum}&limit=100`;
+  
+      const res = await axios.get(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-
-      const fetched = res.data?.posts || [];
-
+  
+      let fetched = res.data?.posts || [];
+  
+      // FIX CỨNG: tab Person chỉ giữ bài của user đang đăng nhập
+      if (tab === "mine") {
+        fetched = fetched.filter(
+          (p) => String(p.user?._id || p.user) === String(currentUserId)
+        );
+      }
+  
       setPosts((prev) => (replace ? fetched : [...prev, ...fetched]));
-      setHasMore(fetched.length === 10);
+      setHasMore(tab === "all" && fetched.length === 100);
     } catch {
       toast.error("Không thể tải bài viết");
     } finally {
@@ -658,7 +697,7 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchPosts(1, true);
+    fetchPosts(1, true, "all");
   }, []);
 
   const handleEditSave = async (id, newContent) => {
@@ -706,17 +745,10 @@ export default function Home() {
   const handleLoadMore = () => {
     const next = page + 1;
     setPage(next);
-    fetchPosts(next, false);
+    fetchPosts(next, false, activeTab);
   };
 
-  const visiblePosts =
-    activeTab === "mine"
-      ? posts.filter(
-          (p) =>
-            String(p.userId) === String(currentUserId) ||
-            String(p.userId?._id) === String(currentUserId)
-        )
-      : posts;
+  const visiblePosts = posts;
 
   return (
     <div
@@ -740,7 +772,11 @@ export default function Home() {
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setActiveTab(id)}
+                  onClick={() => {
+                    setActiveTab(id);
+                    setPage(1);
+                    fetchPosts(1, true, id);
+                  }}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12.5px] font-semibold transition-all duration-200
                     ${
                       activeTab === id
@@ -759,8 +795,8 @@ export default function Home() {
             </div>
 
             <div className="ml-auto flex items-center gap-2">
-  <DarkToggle dark={dark} onToggle={toggleDark} />
-</div>
+              <DarkToggle dark={dark} onToggle={toggleDark} />
+            </div>
           </div>
 
           <div className="flex md:hidden items-center gap-1 pb-2.5">
@@ -771,7 +807,11 @@ export default function Home() {
               <button
                 key={id}
                 type="button"
-                onClick={() => setActiveTab(id)}
+                onClick={() => {
+                  setActiveTab(id);
+                  setPage(1);
+                  fetchPosts(1, true, id);
+                }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[12px] font-semibold transition-all
                   ${
                     activeTab === id
@@ -801,13 +841,14 @@ export default function Home() {
             <>
               {visiblePosts.map((post) => (
                 <PostCard
-                  key={post._id}
-                  post={post}
-                  dark={dark}
-                  currentUserId={currentUserId}
-                  onEdit={setEditTarget}
-                  onDelete={setDelTarget}
-                />
+  key={post._id}
+  post={post}
+  dark={dark}
+  currentUserId={currentUserId}
+  onEdit={setEditTarget}
+  onDelete={setDelTarget}
+  onOpenProfile={openUserProfile}
+/>
               ))}
 
               {hasMore && (
@@ -848,7 +889,7 @@ export default function Home() {
                 </p>
 
                 <p className={`text-[12px] mt-0.5 ${dark ? "text-violet-500" : "text-gray-400"}`}>
-                  {localStorage.getItem("bio") || "Chưa có mô tả cá nhân"}
+                  {localStorage.getItem("bio") || "No bio yet"}
                 </p>
               </div>
             </div>
@@ -856,16 +897,15 @@ export default function Home() {
             <div className={`text-center py-2.5 rounded-2xl mb-4 ${dark ? "bg-[#1e1535]" : "bg-gray-50"}`}>
               <p className={`font-extrabold text-[16px] ${dark ? "text-white" : "text-gray-900"}`}>
                 {
-                  visiblePosts.filter(
+                  posts.filter(
                     (p) =>
-                      String(p.userId) === String(currentUserId) ||
-                      String(p.userId?._id) === String(currentUserId)
+                      String(p.user?._id || p.user) === String(currentUserId)
                   ).length
                 }
               </p>
 
               <p className={`text-[11px] ${dark ? "text-violet-500" : "text-gray-400"}`}>
-                Bài viết của tôi
+              My Articles
               </p>
             </div>
 
@@ -887,7 +927,7 @@ export default function Home() {
             type="button"
             onClick={() => {
               setPage(1);
-              fetchPosts(1, true);
+              fetchPosts(1, true, activeTab);
             }}
             className={`w-full py-3 rounded-2xl font-semibold text-[13px] border flex items-center justify-center gap-2
               transition-all active:scale-95
@@ -898,7 +938,7 @@ export default function Home() {
               }`}
           >
             <MI name="refresh" className="text-[17px]" />
-            Tải lại bài viết
+            Refresh Feed
           </button>
         </aside>
       </div>

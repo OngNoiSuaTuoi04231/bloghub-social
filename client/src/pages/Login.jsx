@@ -246,6 +246,8 @@ function Login() {
         localStorage.setItem("userId", res.data.user._id || "");
         localStorage.setItem("username", res.data.user.username || "");
         localStorage.setItem("role", res.data.user.role || "user");
+        localStorage.setItem("avatar", res.data.user.avatar || "");
+        localStorage.setItem("bio", res.data.user.bio || "");
       }
 
       setToast({

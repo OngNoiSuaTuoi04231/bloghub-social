@@ -104,7 +104,7 @@ export default function VoiceRecorder({ onRecordingComplete }) {
             width: "100%",
           }}
         >
-          ⏹ Dừng Ghi Âm
+          ⏹ Tap to Stop
         </button>
       ) : (
         <button
@@ -118,7 +118,7 @@ export default function VoiceRecorder({ onRecordingComplete }) {
             width: "100%",
           }}
         >
-          🎙 Bắt Đầu Ghi Âm
+          🎙 Tap to Record
         </button>
       )}
     </div>

@@ -24,8 +24,8 @@ function VisibilitySelect({ dark, onChange }) {
 
   const options = [
     { label: "Public", icon: "public" },
-    { label: "Friends", icon: "group" },
-    { label: "Private", icon: "lock" },
+    // { label: "Friends", icon: "group" },
+    // { label: "Private", icon: "lock" },
   ];
 
   useEffect(() => {
@@ -60,11 +60,11 @@ function VisibilitySelect({ dark, onChange }) {
           name={options.find((o) => o.label === selected)?.icon || "public"}
           className="text-[15px]"
         />
-        {selected}
+        {/* {selected}
         <MI
           name={open ? "expand_less" : "expand_more"}
           className="text-[15px]"
-        />
+        /> */}
       </button>
 
       {open && (
@@ -253,7 +253,7 @@ export default function CreatePost() {
             <p
               className={`text-sm mb-8 ${dark ? "text-violet-500" : "text-slate-400"}`}
             >
-              Share photo, voice note or your thoughts with BlogHub.
+              Capture and share moments on VibeNest!
             </p>
 
             <div
@@ -379,7 +379,7 @@ export default function CreatePost() {
                   <p
                     className={`text-[11.5px] ${dark ? "text-violet-500" : "text-gray-400"}`}
                   >
-                    {localStorage.getItem("bio") || "Chưa có mô tả cá nhân"}
+                    {localStorage.getItem("bio") || "No bio yet"}
                   </p>
                 </div>
               </div>
@@ -403,8 +403,8 @@ export default function CreatePost() {
               className={`flex mx-4 mb-3 rounded-2xl p-1 gap-1 ${dark ? "bg-[#1e1535]" : "bg-gray-100"}`}
             >
               {[
-                { id: "photo", icon: "photo_camera", label: "Ảnh Locket" },
-                { id: "voice", icon: "mic", label: "Voice Note" },
+                { id: "photo", icon: "photo_camera", label: "Live Photo" },
+                { id: "voice", icon: "mic", label: "Voice" },
               ].map(({ id, icon, label }) => (
                 <button
                   key={id}
@@ -430,7 +430,7 @@ export default function CreatePost() {
 
             {activeTab === "photo" && (
               <div className="px-4 pb-3">
-                <div
+                {/* <div
                   className={`relative w-full aspect-square rounded-3xl overflow-hidden
                 flex flex-col items-center justify-center
                 transition-all duration-300
@@ -470,6 +470,7 @@ export default function CreatePost() {
                           Safe chunder
                         </p>
                       </div>
+                      
                     </>
                   ) : (
                     <>
@@ -512,7 +513,7 @@ export default function CreatePost() {
                       </p>
                     </>
                   )}
-                </div>
+                </div> */}
 
                 <div
                   className={`mt-3 w-full rounded-2xl overflow-hidden border transition-colors
@@ -565,7 +566,7 @@ export default function CreatePost() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-3 px-4 py-4">
+                  {/* <div className="flex items-center gap-3 px-4 py-4">
                     <button
                       type="button"
                       onClick={toggleRecording}
@@ -597,9 +598,9 @@ export default function CreatePost() {
                     >
                       {fmtTime(recordTime)}
                     </span>
-                  </div>
+                  </div> */}
 
-                  <div className="text-center pb-4">
+                  {/* <div className="text-center pb-4">
                     <p
                       className={`font-bold text-[13px] ${dark ? "text-violet-300" : "text-gray-700"}`}
                     >
@@ -610,7 +611,7 @@ export default function CreatePost() {
                     >
                       Audio Note
                     </p>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div
@@ -638,7 +639,7 @@ export default function CreatePost() {
             )}
           </div>
 
-          <div
+          {/* <div
             className={`flex items-center justify-around px-4 py-3 border-t sticky bottom-0
           transition-colors duration-500
           ${
@@ -677,7 +678,7 @@ export default function CreatePost() {
                 </button>
               );
             })}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

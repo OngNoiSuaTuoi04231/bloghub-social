@@ -4,6 +4,8 @@ import Register from "./pages/Register";
 import CreatePost from "./pages/CreatePost";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
+import Notification from "./pages/Notification";
+import PostDetail from "./pages/PostDetail";
 
 import Layout from "./components/Layout";
 import { DarkModeProvider } from "./context/DarkModeContext";
@@ -30,6 +32,9 @@ function AnimatedRoutes() {
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/createpost" element={<CreatePost />} />
+          <Route path="/notification" element={<Notification />} />  
+          <Route path="/post/:id" element={<PostDetail />} />  
+          <Route path="/profile/:userId" element={<Profile />} />                       
         </Route>
 
         {/* ADMIN page riêng */}
