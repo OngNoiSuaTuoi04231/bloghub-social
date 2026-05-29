@@ -5,7 +5,7 @@ import CameraCapture from "../components/CameraCapture";
 import VoiceRecorder from "../components/VoiceRecorder";
 import { useDarkMode } from "../context/DarkModeContext";
 
-const SERVER_URL = "https://wall-necessarily-formal-reduced.trycloudflare.com";
+const SERVER_URL = "http://localhost:5000";
 
 function MI({ name, className = "" }) {
   return (

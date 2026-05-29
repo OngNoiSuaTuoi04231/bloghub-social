@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { useDarkMode } from "../context/DarkModeContext";
 import Comment from "../components/Comment";
 
-const API = "https://wall-necessarily-formal-reduced.trycloudflare.com/api";
+const API = "http://localhost:5000/api";
 
 function MI({ name, className = "" }) {
   return (
@@ -490,13 +490,11 @@ function PostCard({ post, dark, currentUserId, onEdit, onDelete, onOpenProfile }
 
       {(post.mediaType === "image" || post.mediaType === "image_locket") && post.mediaUrl && (
         <div className="mx-4 mb-3 rounded-2xl overflow-hidden relative">
-          <img
-            src={post.mediaUrl}
-            alt="media"
-            className="w-full object-cover"
-            style={{ maxHeight: 400 }}
-            loading="lazy"
-          />
+ <img
+  src={post.mediaUrl}
+  alt="Post"
+  className="w-full h-auto rounded-2xl max-h-[900px]"
+/>
 
           {post.mediaType === "image_locket" && (
             <div

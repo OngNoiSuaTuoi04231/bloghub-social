@@ -12,7 +12,7 @@ import {
   LogOut,
 } from "lucide-react";
 
-const API = "https://wall-necessarily-formal-reduced.trycloudflare.com/api";
+const API = "http://localhost:5000/api";
 
 export default function Header() {
   const [open, setOpen] = useState(false);

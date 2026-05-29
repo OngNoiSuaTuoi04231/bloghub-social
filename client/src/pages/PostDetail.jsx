@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { useDarkMode } from "../context/DarkModeContext";
 
-const API = "https://wall-necessarily-formal-reduced.trycloudflare.com/api";
+const API = "http://localhost:5000/api";
 
 export default function PostDetail() {
   const { id } = useParams();

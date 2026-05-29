@@ -266,7 +266,7 @@ function Register() {
   
     try {
       const res = await axios.post(
-        "https://wall-necessarily-formal-reduced.trycloudflare.com/api/auth/register",
+        "http://localhost:5000/api/auth/register",
         { username, email, password }
       );
   
@@ -475,7 +475,7 @@ function Register() {
 
           <div className="grid grid-cols-2 gap-3">
             <a
-              href="https://wall-necessarily-formal-reduced.trycloudflare.com/api/auth/google"
+              href="http://localhost:5000/api/auth/google"
               className={`flex items-center justify-center gap-2 py-[13px] rounded-2xl
                 text-[13.5px] font-semibold border
                 active:scale-95 transition-all duration-300 cursor-pointer no-underline
@@ -488,7 +488,7 @@ function Register() {
             </a>
 
             <a
-              href="https://wall-necessarily-formal-reduced.trycloudflare.com/api/auth/facebook"
+              href="http://localhost:5000/api/auth/facebook"
               className={`flex items-center justify-center gap-2 py-[13px] rounded-2xl
                 text-[13.5px] font-semibold border
                 active:scale-95 transition-all duration-300 cursor-pointer no-underline

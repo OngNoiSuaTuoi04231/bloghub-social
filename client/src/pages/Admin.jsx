@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API = "https://wall-necessarily-formal-reduced.trycloudflare.com/api";
+const API = "http://localhost:5000/api";
 
 function MI({ name, className = "" }) {
   return (

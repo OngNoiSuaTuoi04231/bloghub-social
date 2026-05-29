@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const API_BASE = "https://wall-necessarily-formal-reduced.trycloudflare.com";
+const API = "http://localhost:5000/api";
 
 function formatTime(dateString) {
   if (!dateString) return "Vừa xong";
@@ -22,7 +22,7 @@ function Comment({ postId, dark }) {
   useEffect(() => {
     if (!postId) return;
 
-    const socket = io(API_BASE);
+    const socket = io(API);
     socket.emit("join_post_room", postId);
 
     socket.on("new_comment_received", (newComment) => {
@@ -31,7 +31,7 @@ function Comment({ postId, dark }) {
       }
     });
 
-    fetch(`${API_BASE}/api/posts/${postId}/comments`)
+    fetch(`${API}/posts/${postId}/comments`)
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setComments(data.comments);
@@ -51,7 +51,7 @@ function Comment({ postId, dark }) {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch(`${API_BASE}/api/posts/${postId}/comments`, {
+      const res = await fetch(`${API}/posts/${postId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -146,7 +146,7 @@ function CommentItem({ comment, postId, dark }) {
 
     try {
       const res = await fetch(
-        `${API_BASE}/api/posts/${postId}/comments?parentId=${comment._id}`
+        `${API}/api/posts/${postId}/comments?parentId=${comment._id}`
       );
 
       const data = await res.json();
@@ -167,7 +167,7 @@ function CommentItem({ comment, postId, dark }) {
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch(`${API_BASE}/api/posts/${postId}/comments`, {
+      const res = await fetch(`${API}/api/posts/${postId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
