@@ -14,7 +14,7 @@ const verifyToken = (req, res, next) => {
     if (!authHeader) {
       return res.status(401).json({
         success: false,
-        message: "Bạn chưa đăng nhập",
+        message: "You are not logged in",
       });
     }
 
@@ -23,7 +23,7 @@ const verifyToken = (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Token không hợp lệ",
+        message: "Invalid token",
       });
     }
 
@@ -34,7 +34,7 @@ const verifyToken = (req, res, next) => {
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: "Token hết hạn hoặc không hợp lệ",
+      message: "Token expired or invalid",
     });
   }
 };

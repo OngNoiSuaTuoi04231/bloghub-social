@@ -10,8 +10,30 @@ import PostDetail from "./pages/PostDetail";
 import Layout from "./components/Layout";
 import { DarkModeProvider } from "./context/DarkModeContext";
 
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
+
 import { AnimatePresence } from "framer-motion";
+
+function AdminRoute({ children }) {
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (role !== "admin") {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
+}
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -19,7 +41,6 @@ function AnimatedRoutes() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-
         {/* Default */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -32,14 +53,20 @@ function AnimatedRoutes() {
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/createpost" element={<CreatePost />} />
-          <Route path="/notification" element={<Notification />} />  
-          <Route path="/post/:id" element={<PostDetail />} />  
-          <Route path="/profile/:userId" element={<Profile />} />                       
+          <Route path="/notification" element={<Notification />} />
+          <Route path="/post/:id" element={<PostDetail />} />
+          <Route path="/profile/:userId" element={<Profile />} />
         </Route>
 
         {/* ADMIN page riêng */}
-        <Route path="/admin" element={<Admin />} />
-
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <Admin />
+            </AdminRoute>
+          }
+        />
       </Routes>
     </AnimatePresence>
   );

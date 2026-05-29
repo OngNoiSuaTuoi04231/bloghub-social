@@ -10,15 +10,15 @@ router.post("/register", async (req, res) => {
   try {
     const { username, email, password } = req.body;
     const checkUser = await User.findOne({ email });
-    if (checkUser) return res.status(400).json({ message: "Email đã tồn tại" });
+    if (checkUser) return res.status(400).json({ message: "Email already exists" });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ username, email, password: hashedPassword });
 
     await newUser.save();
-    res.status(201).json({ message: "Đăng ký thành công" });
+    res.status(201).json({ message: "Account created successfully" });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -27,10 +27,10 @@ router.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Không tìm thấy user" });
+    if (!user) return res.status(400).json({ message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Sai mật khẩu" });
+    if (!isMatch) return res.status(400).json({ message: "Incorrect password" });
 
     const token = jwt.sign({ id: user._id }, "bloghub_secret", {
       expiresIn: "7d",
@@ -39,12 +39,12 @@ router.post("/login", async (req, res) => {
     const { password: _, ...userSafe } = user._doc;
 
     res.json({
-      message: "Đăng nhập thành công",
+      message: "Login successful",
       token,
       user: userSafe,
     });
   } catch (error) {
-    res.status(500).json({ message: "Lỗi server" });
+    res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -53,7 +53,7 @@ router.put("/avatar", verifyToken, upload.single("avatar"), async (req, res) => 
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "Chưa chọn ảnh",
+        message: "No file chosen",
       });
     }
 
@@ -67,15 +67,15 @@ router.put("/avatar", verifyToken, upload.single("avatar"), async (req, res) => 
 
     res.json({
       success: true,
-      message: "Cập nhật avatar thành công",
+      message: "Update avatar successful",
       user: updatedUser,
       avatar: updatedUser.avatar,
     });
   } catch (error) {
-    console.log("Lỗi upload avatar:", error.message);
+    console.log("Failed to upload avatar:", error.message);
     res.status(500).json({
       success: false,
-      message: "Lỗi server",
+      message: "Server error",
     });
   }
 });

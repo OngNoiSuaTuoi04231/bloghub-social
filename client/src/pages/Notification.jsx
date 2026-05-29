@@ -3,7 +3,7 @@ import axios from "axios";
 import { useDarkMode } from "../context/DarkModeContext";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://localhost:5000/api";
+const API = "https://wall-necessarily-formal-reduced.trycloudflare.com/api";
 
 export default function Notification() {
   const { dark } = useDarkMode();
@@ -72,7 +72,7 @@ export default function Notification() {
                   : "bg-white text-gray-400"
               }`}
             >
-              Chưa có thông báo nào
+              No notifications yet
             </div>
           ) : (
             notifications.map((item) => (

@@ -21,10 +21,10 @@ router.get("/unread-count", verifyToken, async (req, res) => {
       count,
     });
   } catch (error) {
-    console.log("Lỗi đếm notification:", error.message);
+    console.log("Error counting notifications:", error.message);
     res.status(500).json({
       success: false,
-      message: "Lỗi server",
+      message: "Server error",
     });
   }
 });
@@ -43,10 +43,10 @@ router.get("/", verifyToken, async (req, res) => {
       notifications,
     });
   } catch (error) {
-    console.log("Lỗi lấy thông báo:", error.message);
+    console.log("Notification fetch error", error.message);
     res.status(500).json({
       success: false,
-      message: "Lỗi server",
+      message: "Server error",
     });
   }
 });
@@ -62,12 +62,12 @@ router.put("/read-all", verifyToken, async (req, res) => {
 
     res.json({
       success: true,
-      message: "Đã đọc tất cả thông báo",
+      message: "Marked all as read",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Lỗi server",
+      message: "Server error",
     });
   }
 });

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "https://wall-necessarily-formal-reduced.trycloudflare.com";
 
 function formatTime(dateString) {
   if (!dateString) return "Vừa xong";
@@ -63,6 +63,7 @@ function Comment({ postId, dark }) {
       const data = await res.json();
 
       if (data.success) {
+        setComments((prev) => [data.comment, ...prev]);
         setContent("");
       }
     } catch (err) {

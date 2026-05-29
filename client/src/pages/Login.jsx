@@ -220,28 +220,38 @@ function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
+  
     if (!email || !password) {
       setToast({
-        msg: "Vui lòng nhập đầy đủ thông tin!",
+        msg: "Please fill in all fields!",
         ok: false,
       });
       return;
     }
-
+  
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+    if (!emailRegex.test(email)) {
+      setToast({
+        msg: "Please enter a valid email!",
+        ok: false,
+      });
+      return;
+    }
+  
     setLoading(true);
-
+  
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        "https://wall-necessarily-formal-reduced.trycloudflare.com/api/auth/login",
         {
           email,
           password,
         }
       );
-
+  
       localStorage.setItem("token", res.data.token);
-
+  
       if (res.data.user) {
         localStorage.setItem("userId", res.data.user._id || "");
         localStorage.setItem("username", res.data.user.username || "");
@@ -249,28 +259,28 @@ function Login() {
         localStorage.setItem("avatar", res.data.user.avatar || "");
         localStorage.setItem("bio", res.data.user.bio || "");
       }
-
+  
       setToast({
         msg: res.data.message,
         ok: true,
       });
-
+  
       setEmail("");
       setPassword("");
-
+  
       const role = res.data.user?.role;
-
+  
       setTimeout(() => {
         if (role === "admin") {
           navigate("/admin");
         } else {
           navigate("/home");
         }
-      }, 900);
-
+      }, 2000);
+  
     } catch (error) {
       setToast({
-        msg: error.response?.data?.message || "Đăng nhập thất bại",
+        msg: error.response?.data?.message || "Login failed",
         ok: false,
       });
     } finally {
@@ -370,7 +380,7 @@ function Login() {
                   : "bg-indigo-500 hover:bg-indigo-600"
               }`}
             >
-              {loading ? "Đang xử lý..." : "Login"}
+              {loading ? "Please wait..." : "Login"}
             </button>
           </form>
 

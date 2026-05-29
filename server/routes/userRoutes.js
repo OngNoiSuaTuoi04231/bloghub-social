@@ -20,7 +20,7 @@ router.put("/profile", verifyToken, async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy user",
+        message: "User not found",
       });
     }
 
@@ -29,11 +29,11 @@ router.put("/profile", verifyToken, async (req, res) => {
       user,
     });
   } catch (error) {
-    console.log("Lỗi cập nhật bio:", error.message);
+    console.log("Failed to update bio:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "Lỗi server",
+      message: "Server error",
     });
   }
 });
@@ -47,7 +47,7 @@ router.get("/:id", async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy user",
+        message: "User not found",
       });
     }
 
@@ -56,11 +56,11 @@ router.get("/:id", async (req, res) => {
       user,
     });
   } catch (error) {
-    console.log("Lỗi lấy user:", error.message);
+    console.log("Failed to fetch user:", error.message);
 
     res.status(500).json({
       success: false,
-      message: "Lỗi server",
+      message: "Server error",
     });
   }
 });

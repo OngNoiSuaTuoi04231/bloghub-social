@@ -242,32 +242,50 @@ function Register() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-
+  
     if (!username || !email || !password) {
-      setToast({ msg: "Vui lòng nhập đầy đủ thông tin!", ok: false });
+      setToast({
+        msg: "Please fill in all fields!",
+        ok: false,
+      });
       return;
     }
-
+  
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+    if (!emailRegex.test(email)) {
+      setToast({
+        msg: "Please enter a valid email!",
+        ok: false,
+      });
+      return;
+    }
+  
     setLoading(true);
     setToast({ msg: "", ok: true });
-
+  
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/register",
+        "https://wall-necessarily-formal-reduced.trycloudflare.com/api/auth/register",
         { username, email, password }
       );
-
-      setToast({ msg: res.data.message, ok: true });
-
+  
+      setToast({
+        msg: res.data.message || "Account created successfully!",
+        ok: true,
+      });
+      
       setUsername("");
       setEmail("");
       setPassword("");
       setAgreed(false);
-
-      navigate("/login");
+      
+      setTimeout(() => {
+        navigate("/login");
+      }, 1500);
     } catch (error) {
       setToast({
-        msg: error.response?.data?.message || "Đăng ký thất bại",
+        msg: error.response?.data?.message || "Failed to create account",
         ok: false,
       });
     } finally {
@@ -422,7 +440,7 @@ function Register() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="white" strokeWidth="4" />
                     <path className="opacity-75" fill="white" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  Đang xử lý...
+                  Please wait...
                 </>
               ) : "Sign Up"}
             </button>
@@ -457,7 +475,7 @@ function Register() {
 
           <div className="grid grid-cols-2 gap-3">
             <a
-              href="http://localhost:5000/api/auth/google"
+              href="https://wall-necessarily-formal-reduced.trycloudflare.com/api/auth/google"
               className={`flex items-center justify-center gap-2 py-[13px] rounded-2xl
                 text-[13.5px] font-semibold border
                 active:scale-95 transition-all duration-300 cursor-pointer no-underline
@@ -470,7 +488,7 @@ function Register() {
             </a>
 
             <a
-              href="http://localhost:5000/api/auth/facebook"
+              href="https://wall-necessarily-formal-reduced.trycloudflare.com/api/auth/facebook"
               className={`flex items-center justify-center gap-2 py-[13px] rounded-2xl
                 text-[13.5px] font-semibold border
                 active:scale-95 transition-all duration-300 cursor-pointer no-underline

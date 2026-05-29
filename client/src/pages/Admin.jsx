@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://localhost:5000/api";
+const API = "https://wall-necessarily-formal-reduced.trycloudflare.com/api";
 
 function MI({ name, className = "" }) {
   return (
@@ -34,21 +34,161 @@ function StatCard({ icon, label, value, dark }) {
   return (
     <div
       className={`rounded-2xl border p-5 flex-1 ${
-        dark ? "bg-[#130d28] border-violet-900/60" : "bg-white border-gray-100 shadow-sm"
+        dark
+          ? "bg-[#130d28] border-violet-900/60"
+          : "bg-white border-gray-100 shadow-sm"
       }`}
     >
       <MI
         name={icon}
-        className={`text-[28px] ${dark ? "text-violet-400" : "text-indigo-500"}`}
+        className={`text-[28px] ${
+          dark ? "text-violet-400" : "text-indigo-500"
+        }`}
       />
 
-      <p className={`text-[12px] mt-3 ${dark ? "text-violet-500" : "text-gray-500"}`}>
+      <p
+        className={`text-[12px] mt-3 ${
+          dark ? "text-violet-500" : "text-gray-500"
+        }`}
+      >
         {label}
       </p>
 
-      <p className={`text-[28px] font-black ${dark ? "text-white" : "text-gray-900"}`}>
+      <p
+        className={`text-[28px] font-black ${
+          dark ? "text-white" : "text-gray-900"
+        }`}
+      >
         {value ?? 0}
       </p>
+    </div>
+  );
+}
+
+function BarChart({ chartData, dark }) {
+  const data = Array.isArray(chartData) ? chartData : [];
+
+  const maxValue = Math.max(
+    ...data.flatMap((item) => [
+      item.users || 0,
+      item.posts || 0,
+      item.comments || 0,
+      item.notifications || 0,
+    ]),
+    1
+  );
+
+  const series = [
+    { key: "users", label: "Users" },
+    { key: "posts", label: "Posts" },
+    { key: "comments", label: "Comments" },
+    { key: "notifications", label: "Notifications" },
+  ];
+
+  return (
+    <div
+      className={`rounded-2xl border p-6 ${
+        dark
+          ? "bg-[#130d28] border-violet-900/60"
+          : "bg-white border-gray-100 shadow-sm"
+      }`}
+    >
+      <h2
+        className={`font-black text-[18px] mb-2 ${
+          dark ? "text-white" : "text-gray-900"
+        }`}
+      >
+        Daily Column Chart
+      </h2>
+
+      <p
+        className={`text-sm mb-6 ${
+          dark ? "text-violet-500" : "text-gray-500"
+        }`}
+      >
+        Thống kê dữ liệu trong database
+      </p>
+
+      {data.length === 0 ? (
+        <div className="h-[260px] flex items-center justify-center text-gray-400">
+          Chưa có dữ liệu biểu đồ
+        </div>
+      ) : (
+        <>
+          <div className="w-full overflow-x-auto">
+            <div className="min-w-[760px]">
+              <div className="h-[300px] flex items-end gap-4 border-b px-4">
+                {data.map((day) => (
+                  <div
+                    key={day.date}
+                    className="flex-1 flex flex-col items-center justify-end h-full"
+                  >
+                    <div className="flex items-end gap-1 h-[250px] w-full justify-center">
+                      {series.map((item) => {
+                        const value = day[item.key] || 0;
+                        const height = `${Math.max(
+                          (value / maxValue) * 230,
+                          value > 0 ? 8 : 0
+                        )}px`;
+
+                        return (
+                          <div
+                            key={item.key}
+                            title={`${item.label}: ${value}`}
+                            className={`w-5 rounded-t-md transition-all duration-500 ${
+                              item.key === "users"
+                                ? "bg-indigo-500"
+                                : item.key === "posts"
+                                ? "bg-violet-500"
+                                : item.key === "comments"
+                                ? "bg-emerald-500"
+                                : "bg-pink-500"
+                            }`}
+                            style={{ height }}
+                          />
+                        );
+                      })}
+                    </div>
+
+                    <span
+                      className={`text-[11px] mt-3 font-semibold ${
+                        dark ? "text-violet-500" : "text-gray-500"
+                      }`}
+                    >
+                      {day.date}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-4 mt-5">
+            {series.map((item) => (
+              <div key={item.key} className="flex items-center gap-2">
+                <span
+                  className={`w-3 h-3 rounded-full ${
+                    item.key === "users"
+                      ? "bg-indigo-500"
+                      : item.key === "posts"
+                      ? "bg-violet-500"
+                      : item.key === "comments"
+                      ? "bg-emerald-500"
+                      : "bg-pink-500"
+                  }`}
+                />
+                <span
+                  className={`text-sm font-semibold ${
+                    dark ? "text-violet-300" : "text-gray-600"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -79,7 +219,9 @@ function ModerationCard({ item, dark, onDelete, onApprove }) {
   return (
     <div
       className={`rounded-2xl border overflow-hidden ${
-        dark ? "bg-[#1e1535] border-violet-800/60" : "bg-white border-gray-100 shadow-sm"
+        dark
+          ? "bg-[#1e1535] border-violet-800/60"
+          : "bg-white border-gray-100 shadow-sm"
       }`}
     >
       <div
@@ -88,9 +230,16 @@ function ModerationCard({ item, dark, onDelete, onApprove }) {
         }`}
       >
         <div className="flex items-center gap-2">
-          <MI name="article" className={dark ? "text-violet-500" : "text-gray-400"} />
+          <MI
+            name="article"
+            className={dark ? "text-violet-500" : "text-gray-400"}
+          />
 
-          <span className={`text-[13px] font-bold ${dark ? "text-violet-300" : "text-gray-800"}`}>
+          <span
+            className={`text-[13px] font-bold ${
+              dark ? "text-violet-300" : "text-gray-800"
+            }`}
+          >
             Post by {item.user?.username || "Unknown"}
           </span>
         </div>
@@ -107,12 +256,17 @@ function ModerationCard({ item, dark, onDelete, onApprove }) {
       </div>
 
       <div className="px-4 py-4">
-        <p className={`text-[14px] italic ${dark ? "text-violet-300" : "text-gray-700"}`}>
+        <p
+          className={`text-[14px] italic ${
+            dark ? "text-violet-300" : "text-gray-700"
+          }`}
+        >
           "{item.content || item.mediaType || "Không có nội dung"}"
         </p>
 
         {item.mediaUrl &&
-          (item.mediaType === "image" || item.mediaType === "image_locket") && (
+          (item.mediaType === "image" ||
+            item.mediaType === "image_locket") && (
             <img
               src={item.mediaUrl}
               alt="post"
@@ -139,14 +293,14 @@ function ModerationCard({ item, dark, onDelete, onApprove }) {
           Delete
         </button>
 
-        <button
+        {/* <button
           type="button"
           onClick={() => onApprove(item._id)}
           className="flex items-center gap-2 text-emerald-600 font-semibold"
         >
           <MI name="check_circle" />
           Approve
-        </button>
+        </button> */}
       </div>
     </div>
   );
@@ -163,7 +317,7 @@ export default function Admin() {
   const [stats, setStats] = useState({});
   const [users, setUsers] = useState([]);
   const [posts, setPosts] = useState([]);
-  const [notifications, setNotifications] = useState([]);
+  const [chartData, setChartData] = useState([]);
 
   const fetchData = async () => {
     try {
@@ -178,18 +332,24 @@ export default function Admin() {
       setStats(res.data.stats || {});
       setUsers(res.data.users || []);
       setPosts(res.data.posts || []);
-      setNotifications(res.data.notifications || []);
+      setChartData(res.data.chartData || []);
     } catch (error) {
       console.log("Lỗi admin:", error);
       setStats({});
       setUsers([]);
       setPosts([]);
-      setNotifications([]);
+      setChartData([]);
     }
   };
 
   useEffect(() => {
     fetchData();
+  
+    const interval = setInterval(() => {
+      fetchData();
+    }, 3000);
+  
+    return () => clearInterval(interval);
   }, []);
 
   const logout = () => {
@@ -213,6 +373,26 @@ export default function Admin() {
       fetchData();
     } catch {
       alert("Xóa bài viết thất bại");
+    }
+  };
+
+  const deleteUser = async (id) => {
+    const confirmDelete = window.confirm("Bạn có chắc muốn xóa người dùng này?");
+  
+    if (!confirmDelete) return;
+  
+    try {
+      const token = localStorage.getItem("token");
+  
+      await axios.delete(`${API}/admin/users/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      fetchData();
+    } catch {
+      alert("Xóa người dùng thất bại");
     }
   };
 
@@ -259,7 +439,9 @@ export default function Admin() {
     >
       <header
         className={`sticky top-0 z-40 border-b backdrop-blur-md ${
-          dark ? "bg-[#0d0820]/90 border-violet-900/50" : "bg-white/90 border-gray-100"
+          dark
+            ? "bg-[#0d0820]/90 border-violet-900/50"
+            : "bg-white/90 border-gray-100"
         }`}
       >
         <div className="px-4 h-[54px] flex items-center justify-between">
@@ -268,7 +450,9 @@ export default function Admin() {
               type="button"
               onClick={() => setSidebarOpen((p) => !p)}
               className={`lg:hidden w-9 h-9 rounded-xl border ${
-                dark ? "border-violet-800 text-violet-400" : "border-gray-200 text-gray-500"
+                dark
+                  ? "border-violet-800 text-violet-400"
+                  : "border-gray-200 text-gray-500"
               }`}
             >
               <MI name="menu" className="text-[20px]" />
@@ -279,7 +463,11 @@ export default function Admin() {
                 <span className="text-white font-black text-[14px]">A</span>
               </div>
 
-              <span className={`font-black text-[15px] ${dark ? "text-violet-300" : "text-gray-800"}`}>
+              <span
+                className={`font-black text-[15px] ${
+                  dark ? "text-violet-300" : "text-gray-800"
+                }`}
+              >
                 Admin Dashboard
               </span>
             </div>
@@ -290,10 +478,15 @@ export default function Admin() {
               type="button"
               onClick={() => setDark((p) => !p)}
               className={`w-9 h-9 rounded-xl border ${
-                dark ? "bg-[#1e1535] border-violet-700 text-violet-300" : "bg-white border-gray-200 text-gray-500"
+                dark
+                  ? "bg-[#1e1535] border-violet-700 text-violet-300"
+                  : "bg-white border-gray-200 text-gray-500"
               }`}
             >
-              <MI name={dark ? "light_mode" : "dark_mode"} className="text-[18px]" />
+              <MI
+                name={dark ? "light_mode" : "dark_mode"}
+                className="text-[18px]"
+              />
             </button>
 
             <button
@@ -317,10 +510,22 @@ export default function Admin() {
 
         <aside
           className={`fixed lg:sticky top-[54px] left-0 z-30 h-[calc(100vh-54px)] w-[220px] border-r p-4 transition-all
-          ${dark ? "bg-[#0d0820] border-violet-900/50" : "bg-white border-gray-100"}
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+          ${
+            dark
+              ? "bg-[#0d0820] border-violet-900/50"
+              : "bg-white border-gray-100"
+          }
+          ${
+            sidebarOpen
+              ? "translate-x-0"
+              : "-translate-x-full lg:translate-x-0"
+          }`}
         >
-          <p className={`text-[11px] font-black uppercase mb-3 ${dark ? "text-violet-700" : "text-gray-400"}`}>
+          <p
+            className={`text-[11px] font-black uppercase mb-3 ${
+              dark ? "text-violet-700" : "text-gray-400"
+            }`}
+          >
             Management
           </p>
 
@@ -349,42 +554,78 @@ export default function Admin() {
           />
         </aside>
 
-        <main className="flex-1 p-5 md:p-6">
+        <main className="flex-1 p-3 sm:p-5 md:p-6 overflow-x-hidden">
           {(activeNav === "statistics" ||
             activeNav === "users" ||
             activeNav === "content") && (
             <section className="mb-6">
-              <h2 className={`font-black text-[20px] mb-4 ${dark ? "text-white" : "text-gray-900"}`}>
+              <h2
+                className={`font-black text-[20px] mb-4 ${
+                  dark ? "text-white" : "text-gray-900"
+                }`}
+              >
                 Statistics Overview
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <StatCard icon="group" label="Total Users" value={stats.totalUsers} dark={dark} />
-                <StatCard icon="article" label="Total Posts" value={stats.totalPosts} dark={dark} />
-                <StatCard icon="comment" label="Total Comments" value={stats.totalComments} dark={dark} />
-                <StatCard icon="notifications" label="Notifications" value={stats.totalNotifications} dark={dark} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+                <StatCard
+                  icon="group"
+                  label="Total Users"
+                  value={stats.totalUsers}
+                  dark={dark}
+                />
+                <StatCard
+                  icon="article"
+                  label="Total Posts"
+                  value={stats.totalPosts}
+                  dark={dark}
+                />
+                <StatCard
+                  icon="comment"
+                  label="Total Comments"
+                  value={stats.totalComments}
+                  dark={dark}
+                />
+                <StatCard
+                  icon="notifications"
+                  label="Notifications"
+                  value={stats.totalNotifications}
+                  dark={dark}
+                />
               </div>
             </section>
           )}
 
-          {(activeNav === "statistics" || activeNav === "users") && (
+          {activeNav === "statistics" && (
+            <section className="mb-6">
+              <BarChart chartData={chartData} dark={dark} />
+            </section>
+          )}
+
+          {activeNav === "users" && (
             <section className="mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className={`font-black text-[18px] ${dark ? "text-white" : "text-gray-900"}`}>
+                <h2
+                  className={`font-black text-[18px] ${
+                    dark ? "text-white" : "text-gray-900"
+                  }`}
+                >
                   User Management
                 </h2>
 
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm user..."
+                  placeholder="Find user..."
                   className="px-4 py-2 rounded-xl border outline-none text-sm"
                 />
               </div>
 
               <div
                 className={`rounded-2xl border overflow-hidden ${
-                  dark ? "bg-[#130d28] border-violet-900/60" : "bg-white border-gray-100 shadow-sm"
+                  dark
+                    ? "bg-[#130d28] border-violet-900/60"
+                    : "bg-white border-gray-100 shadow-sm"
                 }`}
               >
                 {filteredUsers.map((user) => (
@@ -397,10 +638,18 @@ export default function Admin() {
                     <Avatar name={user.username} />
 
                     <div className="flex-1">
-                      <p className={`font-bold ${dark ? "text-white" : "text-gray-900"}`}>
+                      <p
+                        className={`font-bold ${
+                          dark ? "text-white" : "text-gray-900"
+                        }`}
+                      >
                         {user.username}
                       </p>
-                      <p className={`text-xs ${dark ? "text-violet-600" : "text-gray-400"}`}>
+                      <p
+                        className={`text-xs ${
+                          dark ? "text-violet-600" : "text-gray-400"
+                        }`}
+                      >
                         {user.email}
                       </p>
                     </div>
@@ -408,16 +657,27 @@ export default function Admin() {
                     <span className="text-xs px-2 py-1 rounded-full bg-emerald-50 text-emerald-600">
                       {user.role || "user"}
                     </span>
+                    <button
+  type="button"
+  onClick={() => deleteUser(user._id)}
+  className="text-xs px-3 py-1 rounded-full bg-red-50 text-red-600 font-bold hover:bg-red-100 transition"
+>
+  Delete
+</button>
                   </div>
                 ))}
               </div>
             </section>
           )}
 
-          {(activeNav === "statistics" || activeNav === "content") && (
+          {activeNav === "content" && (
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className={`font-black text-[18px] ${dark ? "text-white" : "text-gray-900"}`}>
+                <h2
+                  className={`font-black text-[18px] ${
+                    dark ? "text-white" : "text-gray-900"
+                  }`}
+                >
                   Content Moderation
                 </h2>
 

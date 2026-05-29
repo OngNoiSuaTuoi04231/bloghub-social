@@ -6,6 +6,38 @@ export default function VoiceRecorder({ onRecordingComplete }) {
   const mediaRecorder = useRef(null);
   const audioChunks = useRef([]);
   const streamRef = useRef(null);
+  const mimeTypeRef = useRef("");
+
+  const getSupportedMimeType = () => {
+    if (
+      window.MediaRecorder &&
+      MediaRecorder.isTypeSupported("audio/mp4")
+    ) {
+      return "audio/mp4";
+    }
+
+    if (
+      window.MediaRecorder &&
+      MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
+    ) {
+      return "audio/webm;codecs=opus";
+    }
+
+    if (
+      window.MediaRecorder &&
+      MediaRecorder.isTypeSupported("audio/webm")
+    ) {
+      return "audio/webm";
+    }
+
+    return "";
+  };
+
+  const getFileExtension = (mimeType) => {
+    if (mimeType.includes("mp4")) return "mp4";
+    if (mimeType.includes("webm")) return "webm";
+    return "audio";
+  };
 
   const stopMicrophone = useCallback(() => {
     if (streamRef.current) {
@@ -16,6 +48,11 @@ export default function VoiceRecorder({ onRecordingComplete }) {
 
   const startRecording = async () => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Trình duyệt không hỗ trợ Micro!");
+        return;
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
       });
@@ -23,7 +60,13 @@ export default function VoiceRecorder({ onRecordingComplete }) {
       streamRef.current = stream;
       audioChunks.current = [];
 
-      const recorder = new MediaRecorder(stream);
+      const mimeType = getSupportedMimeType();
+      mimeTypeRef.current = mimeType;
+
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+
       mediaRecorder.current = recorder;
 
       recorder.ondataavailable = (event) => {
@@ -33,16 +76,28 @@ export default function VoiceRecorder({ onRecordingComplete }) {
       };
 
       recorder.onstop = () => {
+        const finalMimeType =
+          mimeTypeRef.current || audioChunks.current[0]?.type || "audio/mp4";
+
         const audioBlob = new Blob(audioChunks.current, {
-          type: "audio/webm",
+          type: finalMimeType,
         });
 
-        const file = new File([audioBlob], "voice_note.webm", {
-          type: "audio/webm",
-        });
+        const ext = getFileExtension(finalMimeType);
+
+        const file = new File(
+          [audioBlob],
+          `voice_note_${Date.now()}.${ext}`,
+          {
+            type: finalMimeType,
+            lastModified: Date.now(),
+          }
+        );
+
+        const previewUrl = URL.createObjectURL(audioBlob);
 
         if (onRecordingComplete) {
-          onRecordingComplete(file, URL.createObjectURL(audioBlob));
+          onRecordingComplete(file, previewUrl);
         }
 
         audioChunks.current = [];
@@ -53,6 +108,7 @@ export default function VoiceRecorder({ onRecordingComplete }) {
       recorder.start();
       setIsRecording(true);
     } catch (err) {
+      console.log("Micro error:", err);
       alert("Không thể truy cập Micro!");
       setIsRecording(false);
       stopMicrophone();

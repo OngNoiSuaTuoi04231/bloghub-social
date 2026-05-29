@@ -5,7 +5,7 @@ import CameraCapture from "../components/CameraCapture";
 import VoiceRecorder from "../components/VoiceRecorder";
 import { useDarkMode } from "../context/DarkModeContext";
 
-const SERVER_URL = "http://localhost:5000";
+const SERVER_URL = "https://wall-necessarily-formal-reduced.trycloudflare.com";
 
 function MI({ name, className = "" }) {
   return (
@@ -143,11 +143,11 @@ export default function CreatePost() {
   const username = localStorage.getItem("username") || "User";
   const avatarText = username.slice(0, 2).toUpperCase();
 
-  const handleCapture = (file, url) => {
-    setMediaFile(file);
-    setPreview(url);
-    setMediaType("image_locket");
-  };
+const handleCapture = (file, url) => {
+  setMediaFile(file);
+  setPreview(url);
+  setMediaType("image_locket");
+};
 
   const handleVoice = (file, url) => {
     setMediaFile(file);
@@ -537,6 +537,27 @@ export default function CreatePost() {
                       onCapture={handleCapture}
                       onCancel={() => {}}
                     />
+                    {preview && mediaType.includes("image") && (
+  <div className="mt-4 relative">
+    <img
+      src={preview}
+      alt="Preview"
+      className="w-full rounded-2xl max-h-[500px] object-cover border"
+    />
+
+    <button
+      type="button"
+      onClick={() => {
+        setPreview(null);
+        setMediaFile(null);
+        setMediaType("text");
+      }}
+      className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center"
+    >
+      ×
+    </button>
+  </div>
+)}
                   </div>
                 </div>
               </div>

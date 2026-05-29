@@ -3,35 +3,55 @@ import { useRef, useState, useCallback, useEffect } from "react";
 export default function CameraCapture({ onCapture, onCancel }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [stream, setStream] = useState(null);
 
-  const startCamera = async () => {
+  const [stream, setStream] = useState(null);
+  const [facingMode, setFacingMode] = useState("environment");
+
+  const stopTracks = (mediaStream) => {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop());
+    }
+  };
+
+  const startCamera = async (mode = facingMode) => {
     try {
+      stopTracks(stream);
+
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
+        video: {
+          facingMode: { ideal: mode },
+        },
+        audio: false,
       });
+
       setStream(mediaStream);
-      // Đã xoá đoạn gán videoRef ở đây vì gán lúc này là quá sớm (sẽ bị null)
     } catch (err) {
+      console.log("Camera error:", err);
       alert("Không thể truy cập Camera!");
     }
   };
 
-  // THÊM MỚI: Chỉ gán stream vào videoRef khi thẻ <video> ĐÃ HIỂN THỊ trên màn hình
   useEffect(() => {
     if (stream && videoRef.current) {
       videoRef.current.srcObject = stream;
+      videoRef.current.play?.();
     }
   }, [stream]);
 
+  const switchCamera = async () => {
+    const nextMode = facingMode === "user" ? "environment" : "user";
+    setFacingMode(nextMode);
+    await startCamera(nextMode);
+  };
+
   const stopCamera = useCallback(() => {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-    }
+    stopTracks(stream);
     setStream(null);
+
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+
     if (onCancel) {
       onCancel();
     }
@@ -43,31 +63,40 @@ export default function CameraCapture({ onCapture, onCancel }) {
 
     if (!video || !canvas) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    ctx.drawImage(video, 0, 0);
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const file = new File([blob], `locket_capture_${Date.now()}.jpg`, {
-        type: "image/jpeg",
-      });
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
 
-      onCapture(file, URL.createObjectURL(blob));
-      stopCamera();
-    }, "image/jpeg");
+        const file = new File(
+          [blob],
+          `locket_capture_${Date.now()}.jpg`,
+          {
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          }
+        );
+
+        const previewUrl = URL.createObjectURL(blob);
+
+        onCapture(file, previewUrl);
+        stopCamera();
+      },
+      "image/jpeg",
+      0.92
+    );
   }, [onCapture, stopCamera]);
 
-  // Đảm bảo dọn dẹp camera khi người dùng đóng component đột ngột
   useEffect(() => {
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
+      stopTracks(stream);
     };
   }, [stream]);
 
@@ -83,7 +112,7 @@ export default function CameraCapture({ onCapture, onCancel }) {
       {!stream ? (
         <button
           type="button"
-          onClick={startCamera}
+          onClick={() => startCamera(facingMode)}
           style={{
             background: "#7F77DD",
             color: "#fff",
@@ -92,7 +121,7 @@ export default function CameraCapture({ onCapture, onCancel }) {
             borderRadius: 8,
           }}
         >
-          Mở Camera
+          Launch Camera
         </button>
       ) : (
         <div>
@@ -101,7 +130,11 @@ export default function CameraCapture({ onCapture, onCancel }) {
             autoPlay
             playsInline
             muted
-            style={{ width: "100%", borderRadius: 8 }}
+            style={{
+              width: "100%",
+              borderRadius: 8,
+              background: "#111",
+            }}
           />
 
           <canvas ref={canvasRef} style={{ display: "none" }} />
@@ -118,7 +151,21 @@ export default function CameraCapture({ onCapture, onCancel }) {
                 borderRadius: 8,
               }}
             >
-              Chụp
+              Shoot
+            </button>
+
+            <button
+              type="button"
+              onClick={switchCamera}
+              style={{
+                background: "#4F46E5",
+                color: "#fff",
+                padding: 10,
+                flex: 1,
+                borderRadius: 8,
+              }}
+            >
+              Switch
             </button>
 
             <button
@@ -132,7 +179,7 @@ export default function CameraCapture({ onCapture, onCancel }) {
                 borderRadius: 8,
               }}
             >
-              Hủy
+              Cancel
             </button>
           </div>
         </div>

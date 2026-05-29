@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { useDarkMode } from "../context/DarkModeContext";
 import Comment from "../components/Comment";
 
-const API = "http://localhost:5000/api";
+const API = "https://wall-necessarily-formal-reduced.trycloudflare.com/api";
 
 function MI({ name, className = "" }) {
   return (

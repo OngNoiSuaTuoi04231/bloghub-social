@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { useDarkMode } from "../context/DarkModeContext";
 
-const API = "http://localhost:5000/api";
+const API = "https://wall-necessarily-formal-reduced.trycloudflare.com/api";
 
 export default function PostDetail() {
   const { id } = useParams();
@@ -77,11 +77,11 @@ export default function PostDetail() {
 
   const handleSendComment = async () => {
     if (!commentText.trim()) return;
-
+  
     try {
       const token = localStorage.getItem("token");
-
-      await axios.post(
+  
+      const res = await axios.post(
         `${API}/posts/${id}/comments`,
         { content: commentText },
         {
@@ -90,9 +90,18 @@ export default function PostDetail() {
           },
         }
       );
-
-      setCommentText("");
-      fetchComments();
+  
+      if (res.data.success) {
+        setComments((prev) => [
+          {
+            ...res.data.comment,
+            replies: [],
+          },
+          ...prev,
+        ]);
+  
+        setCommentText("");
+      }
     } catch (error) {
       console.log("Lỗi gửi comment:", error);
     }
@@ -204,7 +213,7 @@ export default function PostDetail() {
           dark ? "bg-[#0d0820] text-white" : "bg-[#f7f4ff] text-gray-900"
         }`}
       >
-        Không tìm thấy bài viết
+        Post not found
       </div>
     );
   }
@@ -307,7 +316,7 @@ export default function PostDetail() {
               onClick={handleSendComment}
               className="px-4 py-2 rounded-xl bg-indigo-500 text-white font-semibold"
             >
-              Gửi
+              Sent
             </button>
           </div>
 
@@ -318,7 +327,7 @@ export default function PostDetail() {
                   dark ? "text-violet-500 text-sm" : "text-gray-400 text-sm"
                 }
               >
-                Chưa có bình luận nào
+                No comments yet
               </p>
             ) : (
               comments.map((cmt) => (

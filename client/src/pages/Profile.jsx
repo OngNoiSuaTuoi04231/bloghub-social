@@ -4,7 +4,7 @@ import { Camera, Grid, Mic, FileText } from "lucide-react";
 import { useDarkMode } from "../context/DarkModeContext";
 import axios from "axios";
 
-const API = "http://localhost:5000/api";
+const API = "https://wall-necessarily-formal-reduced.trycloudflare.com/api";
 
 export default function Profile() {
   const navigate = useNavigate();
