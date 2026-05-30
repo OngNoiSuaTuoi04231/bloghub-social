@@ -125,17 +125,18 @@ export default function CameraCapture({ onCapture, onCancel }) {
         </button>
       ) : (
         <div>
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            style={{
-              width: "100%",
-              borderRadius: 8,
-              background: "#111",
-            }}
-          />
+<video
+  ref={videoRef}
+  autoPlay
+  playsInline
+  muted
+  style={{
+    width: "100%",
+    borderRadius: 8,
+    background: "#111",
+    transform: "scaleX(-1)",
+  }}
+/>
 
           <canvas ref={canvasRef} style={{ display: "none" }} />
 
