@@ -357,7 +357,15 @@ function EmptyState({ dark }) {
   );
 }
 
-function PostCard({ post, dark, currentUserId, onEdit, onDelete, onOpenProfile }) {
+function PostCard({
+  post,
+  dark,
+  currentUserId,
+  onEdit,
+  onDelete,
+  onOpenProfile,
+  onRefresh,
+}) {
   const [liked, setLiked] = useState(
     post.likedBy?.some((id) => String(id) === String(currentUserId)) || false
   );
@@ -632,7 +640,11 @@ function PostCard({ post, dark, currentUserId, onEdit, onDelete, onOpenProfile }
             dark ? "border-violet-900/60" : "border-gray-50"
           }`}
         >
-          <Comment postId={post._id} dark={dark} />
+<Comment
+  postId={post._id}
+  dark={dark}
+  onCommentChange={onRefresh}
+/>
         </div>
       )}
     </div>
@@ -846,6 +858,7 @@ export default function Home() {
   onEdit={setEditTarget}
   onDelete={setDelTarget}
   onOpenProfile={openUserProfile}
+  onRefresh={() => fetchPosts(1, true, activeTab)}
 />
               ))}
 

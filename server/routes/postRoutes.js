@@ -9,6 +9,21 @@ const Notification = require("../models/Notification");
 const upload = require("../middleware/upload");
 const verifyToken = require("../middleware/auth");
 
+async function attachRealCommentCount(posts) {
+  return await Promise.all(
+    posts.map(async (post) => {
+      const commentCount = await Comment.countDocuments({
+        postId: post._id,
+      });
+
+      return {
+        ...post,
+        commentCount,
+      };
+    })
+  );
+}
+
 // GET /api/posts
 router.get("/", async (req, res) => {
   try {
@@ -19,9 +34,15 @@ router.get("/", async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
-      .populate("user", "username avatar bio");
+      .populate("user", "username avatar bio")
+      .lean();
 
-    res.status(200).json({ success: true, posts });
+    const postsWithCount = await attachRealCommentCount(posts);
+
+    res.status(200).json({
+      success: true,
+      posts: postsWithCount,
+    });
   } catch (error) {
     console.log("Failed to fetch feed:", error.message);
     res.status(500).json({ success: false, message: "Server error" });
@@ -35,9 +56,15 @@ router.get("/me", verifyToken, async (req, res) => {
 
     const posts = await Post.find({ user: userId })
       .sort({ createdAt: -1 })
-      .populate("user", "username avatar bio");
+      .populate("user", "username avatar bio")
+      .lean();
 
-    res.status(200).json({ success: true, posts });
+    const postsWithCount = await attachRealCommentCount(posts);
+
+    res.status(200).json({
+      success: true,
+      posts: postsWithCount,
+    });
   } catch (error) {
     console.log("Failed to fetch user posts:", error.message);
     res.status(500).json({ success: false, message: "Server error" });
@@ -49,9 +76,15 @@ router.get("/user/:userId", async (req, res) => {
   try {
     const posts = await Post.find({ user: req.params.userId })
       .sort({ createdAt: -1 })
-      .populate("user", "username avatar bio");
+      .populate("user", "username avatar bio")
+      .lean();
 
-    res.status(200).json({ success: true, posts });
+    const postsWithCount = await attachRealCommentCount(posts);
+
+    res.status(200).json({
+      success: true,
+      posts: postsWithCount,
+    });
   } catch (error) {
     console.log("Failed to fetch posts by user:", error.message);
     res.status(500).json({ success: false, message: "Server error" });
@@ -59,13 +92,8 @@ router.get("/user/:userId", async (req, res) => {
 });
 
 // POST /api/posts/create
-// Desktop và mobile đều gửi file qua field "image"
-// Ảnh hay voice phân biệt bằng mediaType
 router.post("/create", verifyToken, upload.single("image"), async (req, res) => {
   try {
-    console.log("BODY:", req.body);
-    console.log("FILE:", req.file);
-
     const { content, mediaType, audioDuration, tags, visibility, studyMode } =
       req.body;
 
@@ -88,6 +116,7 @@ router.post("/create", verifyToken, upload.single("image"), async (req, res) => 
       tags: parsedTags,
       visibility: visibility || "Public",
       studyMode: studyMode === "true",
+      commentCount: 0,
     });
 
     await newPost.save();
@@ -98,9 +127,7 @@ router.post("/create", verifyToken, upload.single("image"), async (req, res) => 
       post: newPost,
     });
   } catch (error) {
-    console.log("Failed to create post:", error);
-    console.log("Error message:", error.message);
-
+    console.log("Failed to create post:", error.message);
     res.status(500).json({
       success: false,
       message: error.message || "Server error",
@@ -233,10 +260,9 @@ router.delete("/:id", verifyToken, async (req, res) => {
 // GET /api/posts/:id
 router.get("/:id", async (req, res) => {
   try {
-    const post = await Post.findById(req.params.id).populate(
-      "user",
-      "username avatar bio"
-    );
+    const post = await Post.findById(req.params.id)
+      .populate("user", "username avatar bio")
+      .lean();
 
     if (!post) {
       return res.status(404).json({
@@ -245,9 +271,16 @@ router.get("/:id", async (req, res) => {
       });
     }
 
+    const commentCount = await Comment.countDocuments({
+      postId: post._id,
+    });
+
     res.json({
       success: true,
-      post,
+      post: {
+        ...post,
+        commentCount,
+      },
     });
   } catch (error) {
     console.log("Failed to fetch post details:", error.message);
@@ -312,6 +345,12 @@ router.post("/:postId/comments", verifyToken, async (req, res) => {
       });
     }
 
+    const realCommentCount = await Comment.countDocuments({ postId });
+
+    await Post.findByIdAndUpdate(postId, {
+      commentCount: realCommentCount,
+    });
+
     if (!parentId && post.user.toString() !== userId.toString()) {
       await Notification.create({
         receiver: post.user,
@@ -322,10 +361,6 @@ router.post("/:postId/comments", verifyToken, async (req, res) => {
       });
     }
 
-    await Post.findByIdAndUpdate(postId, {
-      $inc: { commentCount: 1 },
-    });
-
     if (req.io) {
       req.io.to(`post_${postId}`).emit("new_comment_received", newComment);
     }
@@ -333,6 +368,7 @@ router.post("/:postId/comments", verifyToken, async (req, res) => {
     res.status(201).json({
       success: true,
       comment: newComment,
+      commentCount: realCommentCount,
     });
   } catch (error) {
     console.log("Failed to comment:", error.message);

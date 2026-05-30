@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
 const API = "http://localhost:5000/api";
+const SOCKET_URL = "http://localhost:5000";
 
 function formatTime(dateString) {
   if (!dateString) return "Vừa xong";
@@ -15,14 +16,14 @@ function formatTime(dateString) {
   });
 }
 
-function Comment({ postId, dark }) {
+function Comment({ postId, dark, onCommentChange }) {
   const [comments, setComments] = useState([]);
   const [content, setContent] = useState("");
 
   useEffect(() => {
     if (!postId) return;
 
-    const socket = io(API);
+    const socket = io(SOCKET_URL);
     socket.emit("join_post_room", postId);
 
     socket.on("new_comment_received", (newComment) => {
@@ -46,6 +47,7 @@ function Comment({ postId, dark }) {
 
   const handleSubmitComment = async (e) => {
     e.preventDefault();
+
     if (!content.trim()) return;
 
     const token = localStorage.getItem("token");
@@ -57,7 +59,9 @@ function Comment({ postId, dark }) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({
+          content,
+        }),
       });
 
       const data = await res.json();
@@ -65,6 +69,10 @@ function Comment({ postId, dark }) {
       if (data.success) {
         setComments((prev) => [data.comment, ...prev]);
         setContent("");
+      
+        if (onCommentChange) {
+          onCommentChange();
+        }
       }
     } catch (err) {
       console.error("Lỗi gửi comment:", err);
@@ -120,11 +128,12 @@ function Comment({ postId, dark }) {
         ) : (
           comments.map((comment) => (
             <CommentItem
-              key={comment._id}
-              comment={comment}
-              postId={postId}
-              dark={dark}
-            />
+  key={comment._id}
+  comment={comment}
+  postId={postId}
+  dark={dark}
+  onCommentChange={onCommentChange}
+/>
           ))
         )}
       </div>
@@ -132,7 +141,12 @@ function Comment({ postId, dark }) {
   );
 }
 
-function CommentItem({ comment, postId, dark }) {
+function CommentItem({
+  comment,
+  postId,
+  dark,
+  onCommentChange,
+}) {
   const [replies, setReplies] = useState([]);
   const [showReplies, setShowReplies] = useState(false);
   const [replyText, setReplyText] = useState("");
@@ -146,13 +160,13 @@ function CommentItem({ comment, postId, dark }) {
 
     try {
       const res = await fetch(
-        `${API}/api/posts/${postId}/comments?parentId=${comment._id}`
+        `${API}/posts/${postId}/comments?parentId=${comment._id}`
       );
 
       const data = await res.json();
 
       if (data.success) {
-        setReplies(data.comments);
+        setReplies(data.comments || []);
         setShowReplies(true);
       }
     } catch (err) {
@@ -162,12 +176,13 @@ function CommentItem({ comment, postId, dark }) {
 
   const handleReply = async (e) => {
     e.preventDefault();
+
     if (!replyText.trim()) return;
 
     const token = localStorage.getItem("token");
 
     try {
-      const res = await fetch(`${API}/api/posts/${postId}/comments`, {
+      const res = await fetch(`${API}/posts/${postId}/comments`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -186,6 +201,10 @@ function CommentItem({ comment, postId, dark }) {
         setReplyText("");
         setOpenReply(false);
         setShowReplies(true);
+      
+        if (onCommentChange) {
+          onCommentChange();
+        }
       }
     } catch (err) {
       console.error("Lỗi reply:", err);
@@ -296,11 +315,12 @@ function CommentItem({ comment, postId, dark }) {
         <div className="flex flex-col gap-3 mt-3 ml-3">
           {replies.map((reply) => (
             <CommentItem
-              key={reply._id}
-              comment={reply}
-              postId={postId}
-              dark={dark}
-            />
+  key={reply._id}
+  comment={reply}
+  postId={postId}
+  dark={dark}
+  onCommentChange={onCommentChange}
+/>
           ))}
         </div>
       )}
