@@ -5,7 +5,7 @@ export default function CameraCapture({ onCapture, onCancel }) {
   const canvasRef = useRef(null);
 
   const [stream, setStream] = useState(null);
-  const [facingMode, setFacingMode] = useState("environment");
+  const [facingMode, setFacingMode] = useState("user");
 
   const stopTracks = (mediaStream) => {
     if (mediaStream) {
@@ -69,20 +69,25 @@ export default function CameraCapture({ onCapture, onCancel }) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (facingMode === "user") {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     canvas.toBlob(
       (blob) => {
         if (!blob) return;
 
-        const file = new File(
-          [blob],
-          `locket_capture_${Date.now()}.jpg`,
-          {
-            type: "image/jpeg",
-            lastModified: Date.now(),
-          }
-        );
+        const file = new File([blob], `locket_capture_${Date.now()}.jpg`, {
+          type: "image/jpeg",
+          lastModified: Date.now(),
+        });
 
         const previewUrl = URL.createObjectURL(blob);
 
@@ -92,7 +97,7 @@ export default function CameraCapture({ onCapture, onCancel }) {
       "image/jpeg",
       0.92
     );
-  }, [onCapture, stopCamera]);
+  }, [onCapture, stopCamera, facingMode]);
 
   useEffect(() => {
     return () => {
@@ -120,23 +125,23 @@ export default function CameraCapture({ onCapture, onCancel }) {
             width: "100%",
             borderRadius: 8,
           }}
-        >
-          Launch Camera
+        >Launch Camera
         </button>
       ) : (
         <div>
-<video
-  ref={videoRef}
-  autoPlay
-  playsInline
-  muted
-  style={{
-    width: "100%",
-    borderRadius: 8,
-    background: "#111",
-    transform: "scaleX(-1)",
-  }}
-/>
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{
+              width: "100%",
+              borderRadius: 8,
+              background: "#111",
+              transform:
+                facingMode === "user" ? "scaleX(-1)" : "scaleX(1)",
+            }}
+          />
 
           <canvas ref={canvasRef} style={{ display: "none" }} />
 
@@ -188,3 +193,4 @@ export default function CameraCapture({ onCapture, onCancel }) {
     </div>
   );
 }
+        
