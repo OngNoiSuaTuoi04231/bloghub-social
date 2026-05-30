@@ -14,11 +14,13 @@ const userRoutes = require("./routes/userRoutes");
 const app = express();
 const server = http.createServer(app);
 
+const corsOptions = {
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+};
+
 const io = new Server(server, {
-  cors: {
-    origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  },
+  cors: corsOptions,
 });
 
 app.use((req, res, next) => {
@@ -26,7 +28,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // ROUTES
@@ -36,6 +38,12 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/users", userRoutes);
 
-server.listen(5000, () => {
-  console.log("Server running on port 5000");
+app.get("/", (req, res) => {
+  res.send("BlogHub server is running");
+});
+
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
