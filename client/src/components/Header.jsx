@@ -1,6 +1,7 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useEffect, useState } from "react";
+import { io } from "socket.io-client";
 
 import {
   Home,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 const API = "http://localhost:5000/api";
+const SOCKET_URL = "http://localhost:5000";
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -24,7 +26,6 @@ export default function Header() {
   const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   const navigate = useNavigate();
-
   const dark = true;
 
   useEffect(() => {
@@ -46,10 +47,23 @@ export default function Header() {
     };
 
     fetchUnread();
+  }, []);
 
-    const interval = setInterval(fetchUnread, 3000);
+  useEffect(() => {
+    const socket = io(SOCKET_URL);
+    const myId = localStorage.getItem("userId");
 
-    return () => clearInterval(interval);
+    if (myId) {
+      socket.emit("join_user_room", myId);
+    }
+
+    socket.on("new_notification", () => {
+      setUnreadCount((prev) => prev + 1);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -115,7 +129,15 @@ export default function Header() {
     {
       name: "Notice",
       icon: (
-        <Bell size={20} className={unreadCount > 0 ? "text-red-500" : ""} />
+        <div className="relative">
+          <Bell size={20} className={unreadCount > 0 ? "text-red-500" : ""} />
+
+          {unreadCount > 0 && (
+            <span className="absolute -top-2 -right-2 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </div>
       ),
       path: "/notification",
     },
@@ -128,8 +150,7 @@ export default function Header() {
 
   return (
     <header
-      className={`relative z-[9999] w-full border-b backdrop-blur-lg shadow-sm transition-all duration-500
-      ${
+      className={`relative z-[9999] w-full border-b backdrop-blur-lg shadow-sm transition-all duration-500 ${
         dark ? "bg-[#0f172a]/90 border-white/10" : "bg-white/90 border-gray-200"
       }`}
     >
@@ -139,9 +160,7 @@ export default function Header() {
           className="flex items-center gap-4 cursor-pointer"
         >
           <div
-            className={`w-14 h-14 rounded-2xl backdrop-blur-sm
-            flex items-center justify-center shadow-2xl border transition-all duration-500
-            ${
+            className={`w-14 h-14 rounded-2xl backdrop-blur-sm flex items-center justify-center shadow-2xl border transition-all duration-500 ${
               dark
                 ? "bg-violet-500/20 border-violet-400/30 shadow-violet-900/40"
                 : "bg-white/20 border-white/20 shadow-indigo-900/20"
@@ -164,42 +183,12 @@ export default function Header() {
                 strokeDasharray="2 2"
               />
 
-              <path
-                d="M18 23 C18 23 24 24 32 24"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M18 30 C18 30 24 31 32 31"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M18 37 C18 37 24 38 32 38"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M46 23 C46 23 40 24 32 24"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M46 30 C46 30 40 31 32 31"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M46 37 C46 37 40 38 32 38"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
+              <path d="M18 23 C18 23 24 24 32 24" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M18 30 C18 30 24 31 32 31" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M18 37 C18 37 24 38 32 38" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M46 23 C46 23 40 24 32 24" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M46 30 C46 30 40 31 32 31" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path d="M46 37 C46 37 40 38 32 38" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
 
               <circle cx="52" cy="13" r="3.5" fill="white" fillOpacity="0.85" />
               <circle cx="13" cy="11" r="2.5" fill="white" fillOpacity="0.55" />
@@ -226,8 +215,7 @@ export default function Header() {
         <nav className="hidden items-center gap-2 md:flex">
           <div className="relative mr-2">
             <div
-              className={`flex items-center gap-2 rounded-xl border px-3 py-2 transition-all duration-300
-              ${
+              className={`flex items-center gap-2 rounded-xl border px-3 py-2 transition-all duration-300 ${
                 dark
                   ? "bg-white/5 border-white/10 text-gray-300 focus-within:border-violet-400"
                   : "bg-white border-gray-200 text-gray-700 focus-within:border-violet-500"
@@ -240,8 +228,7 @@ export default function Header() {
                 placeholder="Search user..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className={`w-44 lg:w-56 bg-transparent text-sm outline-none
-                ${
+                className={`w-44 lg:w-56 bg-transparent text-sm outline-none ${
                   dark
                     ? "text-white placeholder:text-gray-500"
                     : "text-gray-800 placeholder:text-gray-400"
@@ -251,8 +238,7 @@ export default function Header() {
 
             {searchResults.length > 0 && (
               <div
-                className={`absolute top-full left-0 z-[9999] mt-2 w-full overflow-hidden rounded-xl border shadow-2xl
-                ${
+                className={`absolute top-full left-0 z-[9999] mt-2 w-full overflow-hidden rounded-xl border shadow-2xl ${
                   dark
                     ? "bg-[#1e293b] border-white/10"
                     : "bg-white border-gray-200"
@@ -261,9 +247,11 @@ export default function Header() {
                 {searchResults.map((user) => (
                   <button
                     key={user._id}
+                    type="button"
                     onClick={() => handleGoProfile(user._id)}
-                    className={`flex w-full items-center gap-3 px-4 py-3 text-left transition
-                    ${dark ? "hover:bg-violet-500/10" : "hover:bg-violet-50"}`}
+                    className={`flex w-full items-center gap-3 px-4 py-3 text-left transition ${
+                      dark ? "hover:bg-violet-500/10" : "hover:bg-violet-50"
+                    }`}
                   >
                     <img
                       src={user.avatar || "/default-avatar.png"}
@@ -294,13 +282,12 @@ export default function Header() {
                 }
               }}
               className={({ isActive }) =>
-                `flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-300
-                ${
+                `flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-300 ${
                   isActive
                     ? "bg-violet-500/20 text-violet-300"
                     : dark
-                      ? "text-gray-300 hover:bg-violet-500/10 hover:text-violet-300"
-                      : "text-gray-700 hover:bg-violet-50 hover:text-violet-600"
+                    ? "text-gray-300 hover:bg-violet-500/10 hover:text-violet-300"
+                    : "text-gray-700 hover:bg-violet-50 hover:text-violet-600"
                 }`
               }
             >
@@ -310,9 +297,11 @@ export default function Header() {
           ))}
 
           <button
+            type="button"
             onClick={handleLogout}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-300
-              ${dark ? "text-red-300 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-300 ${
+              dark ? "text-red-300 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"
+            }`}
           >
             <LogOut size={20} />
 
@@ -322,17 +311,21 @@ export default function Header() {
 
         <div className="flex items-center gap-2 md:hidden">
           <button
+            type="button"
             onClick={() => setShowMobileSearch(!showMobileSearch)}
-            className={`rounded-xl p-2 transition
-            ${dark ? "text-white hover:bg-white/10" : "text-gray-700 hover:bg-gray-100"}`}
+            className={`rounded-xl p-2 transition ${
+              dark ? "text-white hover:bg-white/10" : "text-gray-700 hover:bg-gray-100"
+            }`}
           >
             <Search size={23} />
           </button>
 
           <button
+            type="button"
             onClick={() => setOpen(!open)}
-            className={`rounded-xl p-2 transition
-            ${dark ? "text-white hover:bg-white/10" : "text-gray-700 hover:bg-gray-100"}`}
+            className={`rounded-xl p-2 transition ${
+              dark ? "text-white hover:bg-white/10" : "text-gray-700 hover:bg-gray-100"
+            }`}
           >
             {open ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -341,12 +334,12 @@ export default function Header() {
 
       {showMobileSearch && (
         <div
-          className={`border-t px-4 py-3 md:hidden
-          ${dark ? "bg-[#0f172a] border-white/10" : "bg-white border-gray-200"}`}
+          className={`border-t px-4 py-3 md:hidden ${
+            dark ? "bg-[#0f172a] border-white/10" : "bg-white border-gray-200"
+          }`}
         >
           <div
-            className={`flex items-center gap-2 rounded-xl border px-3 py-2
-            ${
+            className={`flex items-center gap-2 rounded-xl border px-3 py-2 ${
               dark
                 ? "bg-white/5 border-white/10 text-gray-300"
                 : "bg-white border-gray-200 text-gray-700"
@@ -359,8 +352,7 @@ export default function Header() {
               placeholder="Search user..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className={`w-full bg-transparent text-sm outline-none
-              ${
+              className={`w-full bg-transparent text-sm outline-none ${
                 dark
                   ? "text-white placeholder:text-gray-500"
                   : "text-gray-800 placeholder:text-gray-400"
@@ -370,8 +362,7 @@ export default function Header() {
 
           {searchResults.length > 0 && (
             <div
-              className={`mt-3 overflow-hidden rounded-xl border
-              ${
+              className={`mt-3 overflow-hidden rounded-xl border ${
                 dark
                   ? "bg-[#1e293b] border-white/10"
                   : "bg-white border-gray-200"
@@ -380,9 +371,11 @@ export default function Header() {
               {searchResults.map((user) => (
                 <button
                   key={user._id}
+                  type="button"
                   onClick={() => handleGoProfile(user._id)}
-                  className={`flex w-full items-center gap-3 px-4 py-3 text-left transition
-                  ${dark ? "hover:bg-violet-500/10" : "hover:bg-violet-50"}`}
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-left transition ${
+                    dark ? "hover:bg-violet-500/10" : "hover:bg-violet-50"
+                  }`}
                 >
                   <img
                     src={user.avatar || "/default-avatar.png"}
@@ -406,8 +399,9 @@ export default function Header() {
 
       {open && (
         <div
-          className={`border-t md:hidden
-          ${dark ? "bg-[#0f172a] border-white/10" : "bg-white border-gray-200"}`}
+          className={`border-t md:hidden ${
+            dark ? "bg-[#0f172a] border-white/10" : "bg-white border-gray-200"
+          }`}
         >
           <div className="flex flex-col p-4">
             {navItems.map((item, index) => (
@@ -422,13 +416,12 @@ export default function Header() {
                   setOpen(false);
                 }}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300
-                  ${
+                  `flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 ${
                     isActive
                       ? "bg-violet-500/20 text-violet-300"
                       : dark
-                        ? "text-gray-300 hover:bg-violet-500/10 hover:text-violet-300"
-                        : "text-gray-700 hover:bg-violet-50 hover:text-violet-600"
+                      ? "text-gray-300 hover:bg-violet-500/10 hover:text-violet-300"
+                      : "text-gray-700 hover:bg-violet-50 hover:text-violet-600"
                   }`
                 }
               >
@@ -438,12 +431,14 @@ export default function Header() {
             ))}
 
             <button
+              type="button"
               onClick={() => {
                 setOpen(false);
                 handleLogout();
               }}
-              className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300
-                ${dark ? "text-red-300 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"}`}
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 ${
+                dark ? "text-red-300 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"
+              }`}
             >
               <LogOut size={20} />
 

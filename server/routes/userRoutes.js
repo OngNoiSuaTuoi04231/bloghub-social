@@ -5,16 +5,17 @@ const verifyToken = require("../middleware/auth");
 const User = require("../models/User");
 const Notification = require("../models/Notification");
 
-// Helper: loại bỏ tag HTML nguy hiểm
 const sanitize = (str) =>
   typeof str === "string"
-    ? str
-        .trim()
-        .replace(/<[^>]*>/g, "")
-        .replace(/[<>'"]/g, "")
+    ? str.trim().replace(/<[^>]*>/g, "").replace(/[<>'"]/g, "")
     : "";
 
-// TÌM KIẾM NGƯỜI DÙNG
+const sameId = (a, b) => String(a) === String(b);
+
+const hasId = (arr = [], id) => arr.some((item) => sameId(item, id));
+
+const getUserId = (req) => req.user.id || req.user._id || req.user.userId;
+
 router.get("/search", verifyToken, async (req, res) => {
   try {
     const keyword = req.query.q?.trim();
@@ -49,13 +50,12 @@ router.get("/search", verifyToken, async (req, res) => {
   }
 });
 
-// GỬI LỜI MỜI KẾT BẠN / FOLLOW
 router.put("/follow/:id", verifyToken, async (req, res) => {
   try {
-    const currentUserId = req.user.id || req.user._id || req.user.userId;
+    const currentUserId = getUserId(req);
     const targetUserId = req.params.id;
 
-    if (currentUserId === targetUserId) {
+    if (sameId(currentUserId, targetUserId)) {
       return res.status(400).json({
         success: false,
         message: "You cannot follow yourself",
@@ -72,41 +72,49 @@ router.put("/follow/:id", verifyToken, async (req, res) => {
       });
     }
 
-    const alreadyFollowing = currentUser.following?.some(
-      (id) => id.toString() === targetUserId,
-    );
-
-    if (alreadyFollowing) {
-      return res.json({
-        success: true,
-        message: "Already requested",
-      });
+    if (!hasId(currentUser.following, targetUserId)) {
+      currentUser.following.push(targetUserId);
     }
 
-    currentUser.following.push(targetUserId);
-    targetUser.followers.push(currentUserId);
+    if (!hasId(targetUser.followers, currentUserId)) {
+      targetUser.followers.push(currentUserId);
+    }
 
-    const alreadyRequested = targetUser.friendRequests?.some(
-      (id) => id.toString() === currentUserId,
-    );
-
-    if (!alreadyRequested) {
+    if (!hasId(targetUser.friendRequests, currentUserId)) {
       targetUser.friendRequests.push(currentUserId);
     }
 
     await currentUser.save();
     await targetUser.save();
 
-    await Notification.create({
+    const notification = await Notification.create({
       receiver: targetUserId,
       sender: currentUserId,
       type: "follow",
-      message: `${currentUser.username} Sent you a friend request`,
+      message: `${currentUser.username} sent you a friend request`,
     });
+
+    await notification.populate("sender", "username avatar");
+
+    if (req.io) {
+      req.io.to(targetUserId).emit("friend_request_received", {
+        senderId: currentUserId,
+        senderName: currentUser.username,
+        status: "need_accept",
+      });
+
+      req.io.to(targetUserId).emit("new_notification", notification);
+
+      req.io.to(currentUserId).emit("friend_status_updated", {
+        userId: targetUserId,
+        status: "pending",
+      });
+    }
 
     res.json({
       success: true,
       message: "Sent a friend request",
+      status: "pending",
     });
   } catch (error) {
     console.error("Follow error:", error.message);
@@ -118,10 +126,9 @@ router.put("/follow/:id", verifyToken, async (req, res) => {
   }
 });
 
-// CHẤP NHẬN LỜI MỜI
 router.put("/accept/:id", verifyToken, async (req, res) => {
   try {
-    const currentUserId = req.user.id || req.user._id || req.user.userId;
+    const currentUserId = getUserId(req);
     const senderId = req.params.id;
 
     const currentUser = await User.findById(currentUserId);
@@ -134,9 +141,7 @@ router.put("/accept/:id", verifyToken, async (req, res) => {
       });
     }
 
-    const hasRequest = currentUser.friendRequests?.some(
-      (id) => id.toString() === senderId,
-    );
+    const hasRequest = hasId(currentUser.friendRequests, senderId);
 
     if (!hasRequest) {
       return res.status(400).json({
@@ -145,26 +150,36 @@ router.put("/accept/:id", verifyToken, async (req, res) => {
       });
     }
 
-    const currentFollowingSender = currentUser.following?.some(
-      (id) => id.toString() === senderId,
-    );
-
-    if (!currentFollowingSender) {
+    if (!hasId(currentUser.following, senderId)) {
       currentUser.following.push(senderId);
     }
 
-    const senderHasCurrentFollower = senderUser.followers?.some(
-      (id) => id.toString() === currentUserId,
-    );
+    if (!hasId(currentUser.followers, senderId)) {
+      currentUser.followers.push(senderId);
+    }
 
-    if (!senderHasCurrentFollower) {
+    if (!hasId(senderUser.following, currentUserId)) {
+      senderUser.following.push(currentUserId);
+    }
+
+    if (!hasId(senderUser.followers, currentUserId)) {
       senderUser.followers.push(currentUserId);
     }
 
     currentUser.friendRequests.pull(senderId);
+    senderUser.friendRequests.pull(currentUserId);
 
     await currentUser.save();
     await senderUser.save();
+
+    const notification = await Notification.create({
+      receiver: senderId,
+      sender: currentUserId,
+      type: "accept",
+      message: `${currentUser.username} accepted your friend request`,
+    });
+
+    await notification.populate("sender", "username avatar");
 
     if (req.io) {
       req.io.to(senderId).emit("friend_status_updated", {
@@ -176,18 +191,14 @@ router.put("/accept/:id", verifyToken, async (req, res) => {
         userId: senderId,
         status: "friends",
       });
-    }
 
-    await Notification.create({
-      receiver: senderId,
-      sender: currentUserId,
-      type: "accept",
-      message: `${currentUser.username} đã chấp nhận lời mời kết bạn`,
-    });
+      req.io.to(senderId).emit("new_notification", notification);
+    }
 
     res.json({
       success: true,
-      message: "Đã trở thành bạn bè",
+      message: "You are now friends",
+      status: "friends",
     });
   } catch (error) {
     console.error("Accept friend error:", error.message);
@@ -199,10 +210,9 @@ router.put("/accept/:id", verifyToken, async (req, res) => {
   }
 });
 
-// TỪ CHỐI LỜI MỜI
 router.put("/reject/:id", verifyToken, async (req, res) => {
   try {
-    const currentUserId = req.user.id || req.user._id || req.user.userId;
+    const currentUserId = getUserId(req);
     const senderId = req.params.id;
 
     const currentUser = await User.findById(currentUserId);
@@ -211,16 +221,25 @@ router.put("/reject/:id", verifyToken, async (req, res) => {
     if (!currentUser || !senderUser) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy người dùng",
+        message: "User not found",
       });
     }
 
     currentUser.friendRequests.pull(senderId);
-    senderUser.following.pull(currentUserId);
     currentUser.followers.pull(senderId);
+    senderUser.following.pull(currentUserId);
 
     await currentUser.save();
     await senderUser.save();
+
+    const notification = await Notification.create({
+      receiver: senderId,
+      sender: currentUserId,
+      type: "reject",
+      message: `${currentUser.username} rejected your friend request`,
+    });
+
+    await notification.populate("sender", "username avatar");
 
     if (req.io) {
       req.io.to(senderId).emit("friend_status_updated", {
@@ -232,18 +251,14 @@ router.put("/reject/:id", verifyToken, async (req, res) => {
         userId: senderId,
         status: "none",
       });
-    }
 
-    await Notification.create({
-      receiver: senderId,
-      sender: currentUserId,
-      type: "reject",
-      message: `${currentUser.username} đã từ chối lời mời kết bạn`,
-    });
+      req.io.to(senderId).emit("new_notification", notification);
+    }
 
     res.json({
       success: true,
-      message: "Đã từ chối lời mời",
+      message: "Rejected friend request",
+      status: "none",
     });
   } catch (error) {
     console.error("Reject friend error:", error.message);
@@ -255,10 +270,9 @@ router.put("/reject/:id", verifyToken, async (req, res) => {
   }
 });
 
-// KIỂM TRA QUAN HỆ GIỮA 2 USER
-router.get("/relationship/:id", verifyToken, async (req, res) => {
+router.put("/unfriend/:id", verifyToken, async (req, res) => {
   try {
-    const currentUserId = req.user.id || req.user._id || req.user.userId;
+    const currentUserId = getUserId(req);
     const targetUserId = req.params.id;
 
     const currentUser = await User.findById(currentUserId);
@@ -267,25 +281,68 @@ router.get("/relationship/:id", verifyToken, async (req, res) => {
     if (!currentUser || !targetUser) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy người dùng",
+        message: "User not found",
       });
     }
 
-    const iFollowTarget = currentUser.following?.some(
-      (id) => id.toString() === targetUserId,
-    );
+    currentUser.following.pull(targetUserId);
+    currentUser.followers.pull(targetUserId);
+    currentUser.friendRequests.pull(targetUserId);
 
-    const targetFollowsMe = targetUser.following?.some(
-      (id) => id.toString() === currentUserId,
-    );
+    targetUser.following.pull(currentUserId);
+    targetUser.followers.pull(currentUserId);
+    targetUser.friendRequests.pull(currentUserId);
 
-    const targetRequestedMe = currentUser.friendRequests?.some(
-      (id) => id.toString() === targetUserId,
-    );
+    await currentUser.save();
+    await targetUser.save();
 
-    const iRequestedTarget = targetUser.friendRequests?.some(
-      (id) => id.toString() === currentUserId,
-    );
+    if (req.io) {
+      req.io.to(targetUserId).emit("friend_status_updated", {
+        userId: currentUserId,
+        status: "none",
+      });
+
+      req.io.to(currentUserId).emit("friend_status_updated", {
+        userId: targetUserId,
+        status: "none",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Unfriended",
+      status: "none",
+    });
+  } catch (error) {
+    console.error("Unfriend error:", error.message);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+});
+
+router.get("/relationship/:id", verifyToken, async (req, res) => {
+  try {
+    const currentUserId = getUserId(req);
+    const targetUserId = req.params.id;
+
+    const currentUser = await User.findById(currentUserId);
+    const targetUser = await User.findById(targetUserId);
+
+    if (!currentUser || !targetUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const iFollowTarget = hasId(currentUser.following, targetUserId);
+    const targetFollowsMe = hasId(targetUser.following, currentUserId);
+
+    const targetRequestedMe = hasId(currentUser.friendRequests, targetUserId);
+    const iRequestedTarget = hasId(targetUser.friendRequests, currentUserId);
 
     let status = "none";
 
@@ -311,7 +368,6 @@ router.get("/relationship/:id", verifyToken, async (req, res) => {
   }
 });
 
-// LẤY DANH SÁCH BẠN BÈ
 router.get("/:id/friends", verifyToken, async (req, res) => {
   try {
     const targetUserId = req.params.id;
@@ -323,14 +379,14 @@ router.get("/:id/friends", verifyToken, async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "Không tìm thấy người dùng",
+        message: "User not found",
       });
     }
 
-    const followingIds = user.following.map((u) => u._id.toString());
+    const followingIds = user.following.map((u) => String(u._id));
 
     const friends = user.followers.filter((follower) =>
-      followingIds.includes(follower._id.toString()),
+      followingIds.includes(String(follower._id))
     );
 
     res.json({
@@ -348,63 +404,9 @@ router.get("/:id/friends", verifyToken, async (req, res) => {
   }
 });
 
-// HỦY BẠN BÈ
-router.put("/unfriend/:id", verifyToken, async (req, res) => {
-  try {
-    const currentUserId = req.user.id || req.user._id || req.user.userId;
-    const targetUserId = req.params.id;
-
-    const currentUser = await User.findById(currentUserId);
-    const targetUser = await User.findById(targetUserId);
-
-    if (!currentUser || !targetUser) {
-      return res.status(404).json({
-        success: false,
-        message: "Không tìm thấy người dùng",
-      });
-    }
-
-    currentUser.following.pull(targetUserId);
-    currentUser.followers.pull(targetUserId);
-
-    targetUser.following.pull(currentUserId);
-    targetUser.followers.pull(currentUserId);
-
-    await currentUser.save();
-    await targetUser.save();
-
-    if (req.io) {
-      req.io.to(targetUserId).emit("friend_status_updated", {
-        userId: currentUserId,
-        status: "none",
-      });
-
-      req.io.to(currentUserId).emit("friend_status_updated", {
-        userId: targetUserId,
-        status: "none",
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Đã hủy kết bạn",
-    });
-  } catch (error) {
-    console.error("Unfriend error:", error);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-});
-
-// CẬP NHẬT BIO PROFILE CỦA CHÍNH MÌNH
 router.put("/profile", verifyToken, async (req, res) => {
   try {
-    const userId = req.user.id || req.user._id || req.user.userId;
-
-    // Sử dụng sanitize từ helper để chặn mã độc
+    const userId = getUserId(req);
     const bio = sanitize(req.body.bio || "");
 
     if (bio.length > 500) {
@@ -417,7 +419,7 @@ router.put("/profile", verifyToken, async (req, res) => {
     const user = await User.findByIdAndUpdate(
       userId,
       { bio },
-      { new: true },
+      { new: true }
     ).select("-password");
 
     if (!user) {
@@ -441,7 +443,6 @@ router.put("/profile", verifyToken, async (req, res) => {
   }
 });
 
-// LẤY USER THEO ID
 router.get("/:id", async (req, res) => {
   try {
     const user = await User.findById(req.params.id).select("-password");

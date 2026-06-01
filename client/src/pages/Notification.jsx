@@ -2,13 +2,48 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useDarkMode } from "../context/DarkModeContext";
 import { useNavigate } from "react-router-dom";
+import { io } from "socket.io-client"; ///
 
 const API = "https://bloghub-social.onrender.com/api";
+const SOCKET_URL = "https://bloghub-social.onrender.com"; // 
 
 export default function Notification() {
   const { dark } = useDarkMode();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    const socket = io(SOCKET_URL);
+  
+    const myId = localStorage.getItem("userId");
+  
+    if (myId) {
+      socket.emit("join_user_room", myId);
+    }
+  
+    socket.on("new_notification", (notification) => {
+      setNotifications((prev) => [
+        notification,
+        ...prev,
+      ]);
+    });
+  
+    socket.on("new_notification", (notification) => {
+      setNotifications((prev) => {
+        const exists = prev.some(
+          (item) => item._id === notification._id
+        );
+    
+        if (exists) return prev;
+    
+        return [notification, ...prev];
+      });
+    });
+  
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     const fetchNotifications = async () => {
