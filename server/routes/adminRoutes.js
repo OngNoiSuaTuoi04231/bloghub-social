@@ -6,12 +6,13 @@ const Post = require("../models/Post");
 const Comment = require("../models/Comment");
 const Notification = require("../models/Notification");
 
+const verifyToken = require("../middleware/auth");
+const adminAuth = require("../middleware/adminAuth"); // ← THÊM DÒNG NÀY
+
 // GET /api/admin/dashboard
-router.get("/dashboard", async (req, res) => {
+router.get("/dashboard", verifyToken, adminAuth, async (req, res) => {
   try {
-    const users = await User.find()
-      .select("-password")
-      .sort({ createdAt: -1 });
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
 
     const posts = await Post.find()
       .populate("user", "username email avatar role")
@@ -27,11 +28,7 @@ router.get("/dashboard", async (req, res) => {
 
     const groupByDay = async (Model) => {
       return await Model.aggregate([
-        {
-          $match: {
-            createdAt: { $exists: true },
-          },
-        },
+        { $match: { createdAt: { $exists: true } } },
         {
           $group: {
             _id: {
@@ -44,11 +41,7 @@ router.get("/dashboard", async (req, res) => {
             count: { $sum: 1 },
           },
         },
-        {
-          $sort: {
-            _id: 1,
-          },
-        },
+        { $sort: { _id: 1 } },
       ]);
     };
 
@@ -94,88 +87,64 @@ router.get("/dashboard", async (req, res) => {
     });
   } catch (error) {
     console.log("Admin dashboard error:", error.message);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
 // DELETE /api/admin/posts/:id
-router.delete("/posts/:id", async (req, res) => {
+router.delete("/posts/:id", verifyToken, adminAuth, async (req, res) => {
   try {
     await Post.findByIdAndDelete(req.params.id);
     await Comment.deleteMany({ postId: req.params.id });
     await Notification.deleteMany({ post: req.params.id });
 
-    res.json({
-      success: true,
-      message: "Post deleted",
-    });
+    res.json({ success: true, message: "Post deleted" });
   } catch (error) {
     console.log("Delete post error:", error.message);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
 // PUT /api/admin/posts/:id/approve
-router.put("/posts/:id/approve", async (req, res) => {
+router.put("/posts/:id/approve", verifyToken, adminAuth, async (req, res) => {
   try {
     const post = await Post.findById(req.params.id);
 
     if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Post not found",
-      });
+      return res
+        .status(404)
+        .json({ success: false, message: "Post not found" });
     }
 
     const wordCount =
       post.content?.trim().split(/\s+/).filter(Boolean).length || 0;
 
     if (wordCount > 20) {
-      return res.status(400).json({
-        success: false,
-        message: "Post is too long",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Post is too long" });
     }
 
     post.visibility = "Public";
     await post.save();
 
-    res.json({
-      success: true,
-      message: "Post approved",
-      post,
-    });
+    res.json({ success: true, message: "Post approved", post });
   } catch (error) {
     console.log("Approve post error:", error.message);
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
-//xoa nguoi dung
-router.delete("/users/:id", async (req, res) => {
+
+// DELETE /api/admin/users/:id
+router.delete("/users/:id", verifyToken, adminAuth, async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
 
-    res.json({
-      success: true,
-      message: "Xóa người dùng thành công",
-    });
+    res.json({ success: true, message: "Xóa người dùng thành công" });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Xóa người dùng thất bại",
-    });
+    res
+      .status(500)
+      .json({ success: false, message: "Xóa người dùng thất bại" });
   }
 });
 
