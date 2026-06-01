@@ -1,4 +1,3 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 import { useDarkMode } from "../context/DarkModeContext";
 import { useState } from "react";
 import axios from "axios";

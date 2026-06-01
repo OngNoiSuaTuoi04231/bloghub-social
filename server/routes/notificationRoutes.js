@@ -55,10 +55,7 @@ router.put("/read-all", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id || req.user._id || req.user.userId;
 
-    await Notification.updateMany(
-      { receiver: userId },
-      { isRead: true }
-    );
+    await Notification.updateMany({ receiver: userId }, { isRead: true });
 
     res.json({
       success: true,

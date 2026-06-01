@@ -4,12 +4,16 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { useDarkMode } from "../context/DarkModeContext";
 import Comment from "../components/Comment";
+import { io } from "socket.io-client";
 
-const API = "http://localhost:5000/api";
+const SOCKET_URL = "https://bloghub-social.onrender.com";
+const API = "https://bloghub-social.onrender.com/api";
 
 function MI({ name, className = "" }) {
   return (
-    <span className={`material-icons-round select-none leading-none ${className}`}>
+    <span
+      className={`material-icons-round select-none leading-none ${className}`}
+    >
       {name}
     </span>
   );
@@ -149,23 +153,6 @@ function PostMenu({ dark, isOwner, onEdit, onDelete }) {
               Delete Post
             </button>
           )}
-
-          {/* <button
-            type="button"
-            onClick={() => {
-              toast("Đã gửi báo cáo");
-              setOpen(false);
-            }}
-            className={`w-full flex items-center gap-2.5 px-4 py-3 text-[13px] font-medium border-t transition-colors
-              ${
-                dark
-                  ? "text-violet-400 hover:bg-violet-900/30 border-violet-800"
-                  : "text-gray-600 hover:bg-gray-50 border-gray-100"
-              }`}
-          >
-            <MI name="flag" className="text-[16px]" />
-            Báo cáo
-          </button> */}
         </div>
       )}
     </div>
@@ -185,7 +172,9 @@ function EditModal({ post, dark, onClose, onSave }) {
         ${dark ? "bg-[#130d28] border border-violet-800" : "bg-white"}`}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className={`font-black text-[17px] ${dark ? "text-white" : "text-gray-900"}`}>
+          <h3
+            className={`font-black text-[17px] ${dark ? "text-white" : "text-gray-900"}`}
+          >
             Chỉnh sửa bài viết
           </h3>
 
@@ -265,14 +254,17 @@ function DeleteConfirm({ dark, onClose, onConfirm }) {
           <MI name="delete_forever" className="text-[28px] text-red-500" />
         </div>
 
-        <h3 className={`font-black text-[17px] text-center mb-2 ${dark ? "text-white" : "text-gray-900"}`}>
+        <h3
+          className={`font-black text-[17px] text-center mb-2 ${dark ? "text-white" : "text-gray-900"}`}
+        >
           Xóa bài viết?
         </h3>
 
-        <p className={`text-[13px] text-center mb-6 ${dark ? "text-violet-400" : "text-gray-400"}`}>
+        <p
+          className={`text-[13px] text-center mb-6 ${dark ? "text-violet-400" : "text-gray-400"}`}
+        >
           Hành động này không thể hoàn tác.
         </p>
-
         <div className="flex gap-3">
           <button
             type="button"
@@ -297,7 +289,9 @@ function DeleteConfirm({ dark, onClose, onConfirm }) {
 }
 
 function Waveform({ dark }) {
-  const bars = [4, 8, 13, 10, 16, 7, 12, 9, 15, 11, 6, 14, 8, 10, 13, 5, 11, 9, 7, 12];
+  const bars = [
+    4, 8, 13, 10, 16, 7, 12, 9, 15, 11, 6, 14, 8, 10, 13, 5, 11, 9, 7, 12,
+  ];
 
   return (
     <div className="flex items-center gap-[2.5px] h-7">
@@ -319,16 +313,28 @@ function SkeletonCard({ dark }) {
       ${dark ? "bg-[#130d28] border-violet-900/60" : "bg-white border-purple-100 shadow-sm"}`}
     >
       <div className="flex gap-3 mb-4">
-        <div className={`w-10 h-10 rounded-full flex-shrink-0 ${dark ? "bg-violet-900/50" : "bg-gray-100"}`} />
+        <div
+          className={`w-10 h-10 rounded-full flex-shrink-0 ${dark ? "bg-violet-900/50" : "bg-gray-100"}`}
+        />
         <div className="flex-1 flex flex-col gap-2 justify-center">
-          <div className={`h-3 w-28 rounded-full ${dark ? "bg-violet-900/50" : "bg-gray-100"}`} />
-          <div className={`h-2.5 w-20 rounded-full ${dark ? "bg-violet-900/30" : "bg-gray-50"}`} />
+          <div
+            className={`h-3 w-28 rounded-full ${dark ? "bg-violet-900/50" : "bg-gray-100"}`}
+          />
+          <div
+            className={`h-2.5 w-20 rounded-full ${dark ? "bg-violet-900/30" : "bg-gray-50"}`}
+          />
         </div>
       </div>
 
-      <div className={`h-3.5 w-full rounded-full mb-2 ${dark ? "bg-violet-900/40" : "bg-gray-100"}`} />
-      <div className={`h-3.5 w-3/4 rounded-full mb-4 ${dark ? "bg-violet-900/30" : "bg-gray-100"}`} />
-      <div className={`h-48 w-full rounded-2xl ${dark ? "bg-violet-900/20" : "bg-gray-50"}`} />
+      <div
+        className={`h-3.5 w-full rounded-full mb-2 ${dark ? "bg-violet-900/40" : "bg-gray-100"}`}
+      />
+      <div
+        className={`h-3.5 w-3/4 rounded-full mb-4 ${dark ? "bg-violet-900/30" : "bg-gray-100"}`}
+      />
+      <div
+        className={`h-48 w-full rounded-2xl ${dark ? "bg-violet-900/20" : "bg-gray-50"}`}
+      />
     </div>
   );
 }
@@ -343,14 +349,21 @@ function EmptyState({ dark }) {
         className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-5
         ${dark ? "bg-violet-900/40 border border-violet-800" : "bg-indigo-50 border border-indigo-100"}`}
       >
-        <MI name="dynamic_feed" className={`text-[36px] ${dark ? "text-violet-500" : "text-indigo-400"}`} />
+        <MI
+          name="dynamic_feed"
+          className={`text-[36px] ${dark ? "text-violet-500" : "text-indigo-400"}`}
+        />
       </div>
 
-      <h3 className={`font-black text-[17px] mb-2 ${dark ? "text-white" : "text-gray-900"}`}>
+      <h3
+        className={`font-black text-[17px] mb-2 ${dark ? "text-white" : "text-gray-900"}`}
+      >
         Chưa có bài viết nào
       </h3>
 
-      <p className={`text-[13px] max-w-[220px] leading-relaxed ${dark ? "text-violet-500" : "text-gray-400"}`}>
+      <p
+        className={`text-[13px] max-w-[220px] leading-relaxed ${dark ? "text-violet-500" : "text-gray-400"}`}
+      >
         Hãy là người đầu tiên chia sẻ điều gì đó!
       </p>
     </div>
@@ -367,9 +380,8 @@ function PostCard({
   onRefresh,
 }) {
   const [liked, setLiked] = useState(
-    post.likedBy?.some((id) => String(id) === String(currentUserId)) || false
+    post.likedBy?.some((id) => String(id) === String(currentUserId)) || false,
   );
-  const [saved, setSaved] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likeCount ?? post.likes ?? 0);
   const [showCmt, setShowCmt] = useState(false);
 
@@ -386,26 +398,26 @@ function PostCard({
       })
     : "";
 
-    const handleLike = async () => {
-      try {
-        const token = localStorage.getItem("token");
-    
-        const res = await axios.put(
-          `${API}/posts/${post._id}/like`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-    
-        setLiked(res.data.liked);
-        setLikeCount(res.data.likeCount);
-      } catch (error) {
-        toast.error("Like thất bại");
-      }
-    };
+  const handleLike = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await axios.put(
+        `${API}/posts/${post._id}/like`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      setLiked(res.data.liked);
+      setLikeCount(res.data.likeCount);
+    } catch (error) {
+      toast.error("Like thất bại");
+    }
+  };
 
   return (
     <div
@@ -418,46 +430,55 @@ function PostCard({
     >
       <div className="flex items-start justify-between px-4 pt-4 pb-3">
         <div className="flex items-center gap-3">
-        <button
-  type="button"
-  onClick={() => onOpenProfile(post.user?._id || post.user)}
-  className="cursor-pointer"
->
-  <Avatar
-    username={post.user?.username || post.username || ""}
-    avatarUrl={
-      String(post.user?._id || post.user) === String(currentUserId)
-        ? localStorage.getItem("avatar")
-        : post.user?.avatar || null
-    }
-  />
-</button>
+          <button
+            type="button"
+            onClick={() => onOpenProfile(post.user?._id || post.user)}
+            className="cursor-pointer"
+          >
+            <Avatar
+              username={post.user?.username || post.username || ""}
+              avatarUrl={
+                String(post.user?._id || post.user) === String(currentUserId)
+                  ? localStorage.getItem("avatar")
+                  : post.user?.avatar || null
+              }
+            />
+          </button>
 
           <div>
-          <p
-  onClick={() => onOpenProfile(post.user?._id || post.user)}
-  className={`font-bold text-[14px] leading-tight cursor-pointer hover:underline ${
-    dark ? "text-white" : "text-gray-900"
-  }`}
->
-  {post.user?.username || post.username || "User name"}
-</p>
+            <p
+              onClick={() => onOpenProfile(post.user?._id || post.user)}
+              className={`font-bold text-[14px] leading-tight cursor-pointer hover:underline ${
+                dark ? "text-white" : "text-gray-900"
+              }`}
+            >
+              {post.user?.username || post.username || "User name"}
+            </p>
 
             <div className="flex items-center gap-1.5 mt-0.5">
-              <span className={`text-[11.5px] ${dark ? "text-violet-500" : "text-gray-400"}`}>
+              <span
+                className={`text-[11.5px] ${dark ? "text-violet-500" : "text-gray-400"}`}
+              >
                 {timeLabel}
               </span>
 
               {timeLabel && (
-                <span className={`text-[10px] ${dark ? "text-violet-800" : "text-gray-300"}`}>·</span>
+                <span
+                  className={`text-[10px] ${dark ? "text-violet-800" : "text-gray-300"}`}
+                >
+                  ·
+                </span>
               )}
 
               <span
                 className={`inline-flex items-center gap-0.5 text-[11px] font-medium
                 ${dark ? "text-violet-500" : "text-indigo-400"}`}
               >
-                <MI name={post.visibility === "Private" ? "lock" : "public"} className="text-[12px]" />
-                {post.visibility || "Public"}
+                <MI
+                  name={post.privacy === "friends" ? "group" : "public"}
+                  className="text-[12px]"
+                />
+                {post.privacy === "friends" ? "Friends" : "Public"}
               </span>
             </div>
           </div>
@@ -496,29 +517,30 @@ function PostCard({
         </div>
       )}
 
-      {(post.mediaType === "image" || post.mediaType === "image_locket") && post.mediaUrl && (
-        <div className="mx-4 mb-3 rounded-2xl overflow-hidden relative">
- <img
-  src={post.mediaUrl}
-  alt="Post"
-  className="w-full h-auto rounded-2xl max-h-[900px]"
-/>
+      {(post.mediaType === "image" || post.mediaType === "image_locket") &&
+        post.mediaUrl && (
+          <div className="mx-4 mb-3 rounded-2xl overflow-hidden relative">
+            <img
+              src={post.mediaUrl}
+              alt="Post"
+              className="w-full h-auto rounded-2xl max-h-[900px]"
+            />
 
-          {post.mediaType === "image_locket" && (
-            <div
-              className="absolute bottom-0 left-0 right-0 py-4 px-5
+            {post.mediaType === "image_locket" && (
+              <div
+                className="absolute bottom-0 left-0 right-0 py-4 px-5
               bg-gradient-to-t from-black/55 to-transparent pointer-events-none"
-            >
-              <p
-                className="text-white text-center text-[16px] italic font-light tracking-wide"
-                style={{ fontFamily: "cursive" }}
               >
-                VibeNest
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+                <p
+                  className="text-white text-center text-[16px] italic font-light tracking-wide"
+                  style={{ fontFamily: "cursive" }}
+                >
+                  VibeNest
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
       {post.mediaType === "voice_note" && (
         <div
@@ -530,7 +552,10 @@ function PostCard({
               className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
               ${dark ? "bg-violet-600/20" : "bg-indigo-100"}`}
             >
-              <MI name="mic" className={`text-[20px] ${dark ? "text-violet-400" : "text-indigo-500"}`} />
+              <MI
+                name="mic"
+                className={`text-[20px] ${dark ? "text-violet-400" : "text-indigo-500"}`}
+              />
             </div>
 
             <div className="flex-1 min-w-0">
@@ -548,7 +573,12 @@ function PostCard({
           </div>
 
           {post.mediaUrl && (
-            <audio src={post.mediaUrl} controls className="w-full rounded-xl" style={{ height: 36 }} />
+            <audio
+              src={post.mediaUrl}
+              controls
+              className="w-full rounded-xl"
+              style={{ height: 36 }}
+            />
           )}
 
           <p
@@ -576,11 +606,14 @@ function PostCard({
                     ? "text-pink-400 bg-pink-950/40"
                     : "text-pink-500 bg-pink-50"
                   : dark
-                  ? "text-violet-500 hover:bg-violet-900/30"
-                  : "text-gray-500 hover:bg-gray-50"
+                    ? "text-violet-500 hover:bg-violet-900/30"
+                    : "text-gray-500 hover:bg-gray-50"
               }`}
           >
-            <MI name={liked ? "favorite" : "favorite_border"} className="text-[18px]" />
+            <MI
+              name={liked ? "favorite" : "favorite_border"}
+              className="text-[18px]"
+            />
             {likeCount > 0 && likeCount}
           </button>
 
@@ -595,43 +628,14 @@ function PostCard({
                     ? "text-indigo-400 bg-indigo-950/40"
                     : "text-indigo-500 bg-indigo-50"
                   : dark
-                  ? "text-violet-500 hover:bg-violet-900/30"
-                  : "text-gray-500 hover:bg-gray-50"
+                    ? "text-violet-500 hover:bg-violet-900/30"
+                    : "text-gray-500 hover:bg-gray-50"
               }`}
           >
             <MI name="chat_bubble_outline" className="text-[18px]" />
             {post.commentCount > 0 && post.commentCount}
           </button>
-
-          {/* <button
-            type="button"
-            onClick={() => {
-              navigator.clipboard?.writeText(`${window.location.origin}/post/${post._id}`);
-              toast("Đã sao chép link!");
-            }}
-            className={`flex items-center px-3 py-2 rounded-xl transition-all duration-200 active:scale-90
-              ${dark ? "text-violet-500 hover:bg-violet-900/30" : "text-gray-500 hover:bg-gray-50"}`}
-          >
-            <MI name="share" className="text-[18px]" />
-          </button> */}
         </div>
-
-        {/* <button
-          type="button"
-          onClick={() => setSaved((p) => !p)}
-          className={`px-3 py-2 rounded-xl transition-all duration-200 active:scale-90
-            ${
-              saved
-                ? dark
-                  ? "text-violet-400 bg-violet-900/40"
-                  : "text-indigo-500 bg-indigo-50"
-                : dark
-                ? "text-violet-600 hover:bg-violet-900/30"
-                : "text-gray-400 hover:bg-gray-50"
-            }`}
-        >
-          <MI name={saved ? "bookmark" : "bookmark_border"} className="text-[20px]" />
-        </button> */}
       </div>
 
       {showCmt && (
@@ -640,11 +644,7 @@ function PostCard({
             dark ? "border-violet-900/60" : "border-gray-50"
           }`}
         >
-<Comment
-  postId={post._id}
-  dark={dark}
-  onCommentChange={onRefresh}
-/>
+          <Comment postId={post._id} dark={dark} onCommentChange={onRefresh} />
         </div>
       )}
     </div>
@@ -674,28 +674,27 @@ export default function Home() {
   const fetchPosts = async (pageNum = 1, replace = true, tab = activeTab) => {
     try {
       replace ? setLoading(true) : setLoadingMore(true);
-  
+
       const token = localStorage.getItem("token");
       const currentUserId = localStorage.getItem("userId");
-  
+
       const url =
-      tab === "mine"
-        ? `${API}/posts/me`
-        : `${API}/posts?page=${pageNum}&limit=100`;
-  
+        tab === "mine"
+          ? `${API}/posts/me`
+          : `${API}/posts?page=${pageNum}&limit=100`;
+
       const res = await axios.get(url, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-  
+
       let fetched = res.data?.posts || [];
-  
-      // FIX CỨNG: tab Person chỉ giữ bài của user đang đăng nhập
+
       if (tab === "mine") {
         fetched = fetched.filter(
-          (p) => String(p.user?._id || p.user) === String(currentUserId)
+          (p) => String(p.user?._id || p.user) === String(currentUserId),
         );
       }
-  
+
       setPosts((prev) => (replace ? fetched : [...prev, ...fetched]));
       setHasMore(tab === "all" && fetched.length === 100);
     } catch {
@@ -710,6 +709,32 @@ export default function Home() {
     fetchPosts(1, true, "all");
   }, []);
 
+  useEffect(() => {
+    const socket = io(SOCKET_URL);
+
+    const userId = localStorage.getItem("userId");
+
+    if (userId) {
+      socket.emit("join_user_room", userId);
+    }
+
+    socket.on("new_post_created", (newPost) => {
+      setPosts((prev) => {
+        const existed = prev.some((p) => p._id === newPost._id);
+
+        if (existed) return prev;
+        if (activeTab !== "all") return prev;
+
+        return [newPost, ...prev];
+      });
+      toast.success("Có bài viết mới!");
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [activeTab]);
+
   const handleEditSave = async (id, newContent) => {
     try {
       const token = localStorage.getItem("token");
@@ -719,11 +744,11 @@ export default function Home() {
         { content: newContent },
         {
           headers: { Authorization: `Bearer ${token}` },
-        }
+        },
       );
 
       setPosts((prev) =>
-        prev.map((p) => (p._id === id ? { ...p, content: newContent } : p))
+        prev.map((p) => (p._id === id ? { ...p, content: newContent } : p)),
       );
 
       toast.success("Đã cập nhật bài viết");
@@ -794,8 +819,8 @@ export default function Home() {
                           ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-900/40"
                           : "bg-white text-indigo-600 shadow-md shadow-indigo-100"
                         : dark
-                        ? "text-violet-500"
-                        : "text-gray-500"
+                          ? "text-violet-500"
+                          : "text-gray-500"
                     }`}
                 >
                   <MI name={icon} className="text-[16px]" />
@@ -811,8 +836,8 @@ export default function Home() {
 
           <div className="flex md:hidden items-center gap-1 pb-2.5">
             {[
-              { id: "all", icon: "dynamic_feed", label: "Tất cả" },
-              { id: "mine", icon: "person", label: "Của tôi" },
+              { id: "all", icon: "dynamic_feed", label: "Everyone" },
+              { id: "mine", icon: "person", label: "Person" },
             ].map(({ id, icon, label }) => (
               <button
                 key={id}
@@ -829,8 +854,8 @@ export default function Home() {
                         ? "bg-violet-900/50 text-violet-300"
                         : "bg-indigo-100 text-indigo-600"
                       : dark
-                      ? "text-violet-600"
-                      : "text-gray-500"
+                        ? "text-violet-600"
+                        : "text-gray-500"
                   }`}
               >
                 <MI name={icon} className="text-[14px]" />
@@ -851,15 +876,15 @@ export default function Home() {
             <>
               {visiblePosts.map((post) => (
                 <PostCard
-  key={post._id}
-  post={post}
-  dark={dark}
-  currentUserId={currentUserId}
-  onEdit={setEditTarget}
-  onDelete={setDelTarget}
-  onOpenProfile={openUserProfile}
-  onRefresh={() => fetchPosts(1, true, activeTab)}
-/>
+                  key={post._id}
+                  post={post}
+                  dark={dark}
+                  currentUserId={currentUserId}
+                  onEdit={setEditTarget}
+                  onDelete={setDelTarget}
+                  onOpenProfile={openUserProfile}
+                  onRefresh={() => fetchPosts(1, true, activeTab)}
+                />
               ))}
 
               {hasMore && (
@@ -895,28 +920,38 @@ export default function Home() {
               />
 
               <div>
-                <p className={`font-black text-[15px] leading-tight ${dark ? "text-white" : "text-gray-900"}`}>
+                <p
+                  className={`font-black text-[15px] leading-tight ${dark ? "text-white" : "text-gray-900"}`}
+                >
                   {localStorage.getItem("username") || "User name"}
                 </p>
 
-                <p className={`text-[12px] mt-0.5 ${dark ? "text-violet-500" : "text-gray-400"}`}>
+                <p
+                  className={`text-[12px] mt-0.5 ${dark ? "text-violet-500" : "text-gray-400"}`}
+                >
                   {localStorage.getItem("bio") || "No bio yet"}
                 </p>
               </div>
             </div>
 
-            <div className={`text-center py-2.5 rounded-2xl mb-4 ${dark ? "bg-[#1e1535]" : "bg-gray-50"}`}>
-              <p className={`font-extrabold text-[16px] ${dark ? "text-white" : "text-gray-900"}`}>
+            <div
+              className={`text-center py-2.5 rounded-2xl mb-4 ${dark ? "bg-[#1e1535]" : "bg-gray-50"}`}
+            >
+              <p
+                className={`font-extrabold text-[16px] ${dark ? "text-white" : "text-gray-900"}`}
+              >
                 {
                   posts.filter(
                     (p) =>
-                      String(p.user?._id || p.user) === String(currentUserId)
+                      String(p.user?._id || p.user) === String(currentUserId),
                   ).length
                 }
               </p>
 
-              <p className={`text-[11px] ${dark ? "text-violet-500" : "text-gray-400"}`}>
-              My Articles
+              <p
+                className={`text-[11px] ${dark ? "text-violet-500" : "text-gray-400"}`}
+              >
+                My Articles
               </p>
             </div>
 

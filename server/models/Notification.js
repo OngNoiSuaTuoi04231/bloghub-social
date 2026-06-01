@@ -21,7 +21,7 @@ const notificationSchema = new mongoose.Schema(
 
     type: {
       type: String,
-      enum: ["like", "comment"],
+      enum: ["like", "comment", "follow", "accept", "reject"],
       required: true,
     },
 
@@ -35,7 +35,7 @@ const notificationSchema = new mongoose.Schema(
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model("Notification", notificationSchema);

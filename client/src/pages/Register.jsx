@@ -1,4 +1,3 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 import { useDarkMode } from "../context/DarkModeContext";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";

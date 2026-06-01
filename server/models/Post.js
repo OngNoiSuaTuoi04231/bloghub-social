@@ -8,6 +8,12 @@ const postSchema = new mongoose.Schema(
       required: false,
     },
 
+    privacy: {
+      type: String,
+      enum: ["public", "friends"],
+      default: "public",
+    },
+
     content: {
       type: String,
       default: "",
@@ -25,6 +31,7 @@ const postSchema = new mongoose.Schema(
 
     visibility: {
       type: String,
+      enum: ["Public", "Friends"],
       default: "Public",
     },
 

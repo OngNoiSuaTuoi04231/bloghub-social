@@ -3,8 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Camera, Grid, Mic, FileText } from "lucide-react";
 import { useDarkMode } from "../context/DarkModeContext";
 import axios from "axios";
+import { io } from "socket.io-client";
 
-const API = "http://localhost:5000/api";
+const SOCKET_URL = "https://bloghub-social.onrender.com";
+const API = "https://bloghub-social.onrender.com/api";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -22,6 +24,12 @@ export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [myPosts, setMyPosts] = useState([]);
   const [avatar, setAvatar] = useState("");
+  const [relationship, setRelationship] = useState("none");
+  const [totalPosts, setTotalPosts] = useState(0);
+
+  const [friends, setFriends] = useState([]);
+  const [showFriends, setShowFriends] = useState(false);
+  const [friendCount, setFriendCount] = useState(0);
 
   const [user, setUser] = useState({
     name: "",
@@ -36,6 +44,21 @@ export default function Profile() {
   useEffect(() => {
     if (!token) navigate("/login");
   }, [token, navigate]);
+
+  const fetchFriends = async () => {
+    try {
+      const res = await axios.get(`${API}/users/${profileUserId}/friends`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setFriends(res.data.friends || []);
+      setFriendCount(res.data.count || 0);
+    } catch (error) {
+      console.log("Friends error:", error.response?.data || error.message);
+    }
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -57,14 +80,58 @@ export default function Profile() {
 
         setAvatar(profileUser.avatar || "");
 
-        const postsRes = await axios.get(`${API}/posts/user/${profileUserId}`);
+        const postsRes = await axios.get(`${API}/posts/user/${profileUserId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
         setMyPosts(postsRes.data.posts || []);
+        setTotalPosts(
+          postsRes.data.totalPosts ?? postsRes.data.posts?.length ?? 0,
+        );
+
+        await fetchFriends();
+
+        if (!isMyProfile) {
+          const relationRes = await axios.get(
+            `${API}/users/relationship/${profileUserId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            },
+          );
+
+          setRelationship(relationRes.data.status || "none");
+        }
       } catch (error) {
         console.log("Lỗi lấy profile:", error);
       }
     };
 
     fetchProfile();
+  }, [profileUserId, isMyProfile, token]);
+
+  useEffect(() => {
+    const socket = io(SOCKET_URL);
+
+    const myId = localStorage.getItem("userId");
+
+    if (myId) {
+      socket.emit("join_user_room", myId);
+    }
+
+    socket.on("friend_status_updated", (data) => {
+      if (String(data.userId) === String(profileUserId)) {
+        setRelationship(data.status);
+        fetchFriends();
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
   }, [profileUserId]);
 
   const handleAvatarChange = async (e) => {
@@ -99,7 +166,7 @@ export default function Profile() {
   const handleSave = async () => {
     try {
       if (!isMyProfile) return;
-  
+
       const res = await axios.put(
         `${API}/users/profile`,
         {
@@ -109,23 +176,23 @@ export default function Profile() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
-  
+
       const updatedUser = res.data.user;
-  
+
       setUser({
         name: updatedUser.username || "User",
         bio: updatedUser.bio || "",
       });
-  
+
       setForm({
         name: updatedUser.username || "User",
         bio: updatedUser.bio || "",
       });
-  
+
       localStorage.setItem("bio", updatedUser.bio || "");
-  
+
       setIsEditing(false);
       alert("Cập nhật bio thành công");
     } catch (error) {
@@ -134,14 +201,93 @@ export default function Profile() {
     }
   };
 
+  const handleFollow = async () => {
+    try {
+      await axios.put(
+        `${API}/users/follow/${profileUserId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      setRelationship("pending");
+    } catch (error) {
+      console.log("Follow error:", error.response?.data || error.message);
+      alert("Follow thất bại");
+    }
+  };
+
+  const handleAccept = async () => {
+    try {
+      await axios.put(
+        `${API}/users/accept/${profileUserId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      setRelationship("friends");
+      fetchFriends();
+    } catch (error) {
+      console.log("Accept error:", error.response?.data || error.message);
+      alert("Chấp nhận thất bại");
+    }
+  };
+
+  const handleReject = async () => {
+    try {
+      await axios.put(
+        `${API}/users/reject/${profileUserId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      setRelationship("none");
+      fetchFriends();
+    } catch (error) {
+      console.log("Reject error:", error.response?.data || error.message);
+      alert("Từ chối thất bại");
+    }
+  };
+
+  const handleUnfriend = async () => {
+    try {
+      await axios.put(
+        `${API}/users/unfriend/${profileUserId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      setRelationship("none");
+      fetchFriends();
+    } catch (error) {
+      console.log("Unfriend error:", error.response?.data || error.message);
+      alert("Hủy kết bạn thất bại");
+    }
+  };
+
   const momentPosts = myPosts.filter(
-    (post) => post.mediaType === "image" || post.mediaType === "image_locket"
+    (post) => post.mediaType === "image" || post.mediaType === "image_locket",
   );
 
   const voicePosts = myPosts.filter((post) => post.mediaType === "voice_note");
 
   const textPosts = myPosts.filter(
-    (post) => post.mediaType === "text" || !post.mediaType
+    (post) => post.mediaType === "text" || !post.mediaType,
   );
 
   return (
@@ -246,8 +392,8 @@ export default function Profile() {
                             ? "text-violet-400"
                             : "text-slate-500"
                           : dark
-                          ? "text-violet-600 italic"
-                          : "text-slate-400 italic"
+                            ? "text-violet-600 italic"
+                            : "text-slate-400 italic"
                       }`}
                     >
                       {user.bio || "No bio yet"}
@@ -256,7 +402,15 @@ export default function Profile() {
                 )}
 
                 <div className="flex gap-10 mt-5">
-                  <Stat number={myPosts.length} text="All Posts" dark={dark} />
+                  <Stat number={totalPosts} text="All Posts" dark={dark} />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowFriends(true)}
+                    className="text-left"
+                  >
+                    <Stat number={friendCount} text="Friends" dark={dark} />
+                  </button>
                 </div>
               </div>
             </div>
@@ -296,6 +450,66 @@ export default function Profile() {
                   Edit Profile
                 </button>
               ))}
+
+            {!isMyProfile && relationship === "none" && (
+              <button
+                type="button"
+                onClick={handleFollow}
+                className="px-5 py-2 rounded-lg bg-indigo-500 text-white text-sm shadow hover:bg-indigo-600"
+              >
+                Follow
+              </button>
+            )}
+
+            {!isMyProfile && relationship === "pending" && (
+              <button
+                type="button"
+                disabled
+                className="px-5 py-2 rounded-lg bg-gray-500 text-white text-sm shadow cursor-not-allowed"
+              >
+                Requested
+              </button>
+            )}
+
+            {!isMyProfile && relationship === "friends" && (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled
+                  className="px-5 py-2 rounded-lg bg-green-600 text-white text-sm shadow cursor-default"
+                >
+                  Friends
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleUnfriend}
+                  className="px-5 py-2 rounded-lg bg-red-600 text-white text-sm shadow hover:bg-red-700"
+                >
+                  Unfollow
+                </button>
+              </div>
+            )}
+
+            {!isMyProfile && relationship === "need_accept" && (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleAccept}
+                  className="px-5 py-2 rounded-lg bg-green-600 text-white text-sm shadow hover:bg-green-700"
+                >
+                  Accept
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleReject}
+                  className="px-5 py-2 rounded-lg bg-red-600 text-white text-sm shadow hover:bg-red-700"
+                >
+                  Decline
+                </button>
+              </div>
+            )}
           </div>
         </section>
 
@@ -329,7 +543,12 @@ export default function Profile() {
           <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {momentPosts.length > 0 ? (
               momentPosts.map((post) => (
-                <MomentCard key={post._id} post={post} dark={dark} />
+                <MomentCard
+                  key={post._id}
+                  post={post}
+                  dark={dark}
+                  onClick={() => navigate(`/post/${post._id}`)}
+                />
               ))
             ) : (
               <EmptyBox text="No moments yet" dark={dark} />
@@ -341,7 +560,12 @@ export default function Profile() {
           <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {voicePosts.length > 0 ? (
               voicePosts.map((post) => (
-                <VoiceCard key={post._id} post={post} dark={dark} />
+                <VoiceCard
+                  key={post._id}
+                  post={post}
+                  dark={dark}
+                  onClick={() => navigate(`/post/${post._id}`)}
+                />
               ))
             ) : (
               <EmptyBox text="No voice notes yet" dark={dark} />
@@ -353,12 +577,114 @@ export default function Profile() {
           <section className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-5">
             {textPosts.length > 0 ? (
               textPosts.map((post) => (
-                <PostCard key={post._id} post={post} dark={dark} />
+                <PostCard
+                  key={post._id}
+                  post={post}
+                  dark={dark}
+                  onClick={() => navigate(`/post/${post._id}`)}
+                />
               ))
             ) : (
               <EmptyBox text="No posts yet" dark={dark} />
             )}
           </section>
+        )}
+
+        {showFriends && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div
+              className={`w-full max-w-md rounded-2xl p-5 ${
+                dark ? "bg-[#130d28]" : "bg-white"
+              }`}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3
+                  className={`font-bold text-lg ${
+                    dark ? "text-white" : "text-slate-800"
+                  }`}
+                >
+                  Friend list ({friendCount})
+                </h3>
+
+                <button
+                  type="button"
+                  onClick={() => setShowFriends(false)}
+                  className="text-red-500 font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                {friends.length === 0 ? (
+                  <p
+                    className={`text-sm ${
+                      dark ? "text-violet-400" : "text-slate-500"
+                    }`}
+                  >
+                    No friends yet
+                  </p>
+                ) : (
+                  friends.map((friend) => (
+                    <div
+                      key={friend._id}
+                      className={`flex items-center justify-between p-3 rounded-xl ${
+                        dark ? "bg-[#1e1535]" : "bg-slate-100"
+                      }`}
+                    >
+                      <div
+                        className="flex items-center gap-3 cursor-pointer"
+                        onClick={() => {
+                          setShowFriends(false);
+                          navigate(`/profile/${friend._id}`);
+                        }}
+                      >
+                        {friend.avatar ? (
+                          <img
+                            src={friend.avatar}
+                            alt=""
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-indigo-500 text-white flex items-center justify-center">
+                            {friend.username?.charAt(0)}
+                          </div>
+                        )}
+
+                        <span
+                          className={dark ? "text-white" : "text-slate-800"}
+                        >
+                          {friend.username}
+                        </span>
+                      </div>
+
+                      {isMyProfile && (
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            await axios.put(
+                              `${API}/users/unfriend/${friend._id}`,
+                              {},
+                              {
+                                headers: {
+                                  Authorization: `Bearer ${token}`,
+                                },
+                              },
+                            );
+
+                            fetchFriends();
+                          }}
+                          className="px-3 py-1 rounded-lg bg-red-500 text-white text-xs"
+                        >
+                          Hủy
+                        </button>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </main>
     </div>
@@ -376,8 +702,8 @@ function TabButton({ active, onClick, icon, text, dark }) {
             ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white"
             : "bg-indigo-500 text-white"
           : dark
-          ? "bg-[#1e1535] text-violet-400 hover:bg-violet-900/40"
-          : "bg-indigo-100 text-indigo-500 hover:bg-indigo-200"
+            ? "bg-[#1e1535] text-violet-400 hover:bg-violet-900/40"
+            : "bg-indigo-100 text-indigo-500 hover:bg-indigo-200"
       }`}
     >
       {icon}
@@ -386,10 +712,11 @@ function TabButton({ active, onClick, icon, text, dark }) {
   );
 }
 
-function MomentCard({ post, dark }) {
+function MomentCard({ post, dark, onClick }) {
   return (
     <div
-      className={`rounded-2xl overflow-hidden border shadow-sm max-w-[360px]
+      onClick={onClick}
+      className={`cursor-pointer rounded-2xl overflow-hidden border shadow-sm max-w-[360px]
       ${dark ? "bg-[#130d28] border-violet-900" : "bg-white border-purple-100"}`}
     >
       {post.mediaUrl && (
@@ -413,10 +740,11 @@ function MomentCard({ post, dark }) {
   );
 }
 
-function VoiceCard({ post, dark }) {
+function VoiceCard({ post, dark, onClick }) {
   return (
     <div
-      className={`border rounded-2xl p-4 shadow-sm max-w-[520px]
+      onClick={onClick}
+      className={`cursor-pointer border rounded-2xl p-4 shadow-sm max-w-[520px]
       ${dark ? "bg-[#130d28] border-violet-900" : "bg-white border-purple-100"}`}
     >
       <p
@@ -435,15 +763,18 @@ function VoiceCard({ post, dark }) {
         {post.createdAt ? new Date(post.createdAt).toLocaleString("vi-VN") : ""}
       </p>
 
-      {post.mediaUrl && <audio controls src={post.mediaUrl} className="w-full" />}
+      {post.mediaUrl && (
+        <audio controls src={post.mediaUrl} className="w-full" />
+      )}
     </div>
   );
 }
 
-function PostCard({ post, dark }) {
+function PostCard({ post, dark, onClick }) {
   return (
     <div
-      className={`border rounded-2xl p-4 shadow-sm w-full
+      onClick={onClick}
+      className={`cursor-pointer border rounded-2xl p-4 shadow-sm w-full
       ${dark ? "bg-[#130d28] border-violet-900" : "bg-white border-purple-100"}`}
     >
       <p

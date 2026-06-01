@@ -15,59 +15,88 @@ const sanitize = (str) =>
         .replace(/[<>'"]/g, "")
     : "";
 
+// ĐĂNG KÝ
 router.post("/register", async (req, res) => {
   try {
     const username = sanitize(req.body.username);
     const email = sanitize(req.body.email);
     const password = req.body.password || "";
 
-    // Validate username: chỉ cho chữ, số, dấu cách, gạch dưới
     if (!username || username.length < 3 || username.length > 50) {
       return res.status(400).json({ message: "Username phải từ 3-50 ký tự" });
     }
+
     if (!/^[\w\s\u00C0-\u024F\u1E00-\u1EFF]+$/.test(username)) {
       return res
         .status(400)
         .json({ message: "Username không được chứa ký tự đặc biệt" });
     }
-    // ...phần còn lại giữ nguyên
+
     if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
       return res.status(400).json({ message: "Email không hợp lệ" });
     }
+
     if (!password || password.length < 6 || password.length > 100) {
       return res.status(400).json({ message: "Mật khẩu phải từ 6-100 ký tự" });
     }
 
     const checkUser = await User.findOne({ email });
+
     if (checkUser) {
       return res.status(400).json({ message: "Email already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, email, password: hashedPassword });
+
+    const newUser = new User({
+      username,
+      email,
+      password: hashedPassword,
+    });
 
     await newUser.save();
-    res.status(201).json({ message: "Account created successfully" });
+
+    res.status(201).json({
+      message: "Account created successfully",
+    });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Register error:", error.message);
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 });
 
+// ĐĂNG NHẬP
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "User not found" });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found",
+      });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch)
-      return res.status(400).json({ message: "Incorrect password" });
+
+    if (!isMatch) {
+      return res.status(400).json({
+        message: "Incorrect password",
+      });
+    }
 
     const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET || "bloghub_secret", // ← dùng env nếu có
-      { expiresIn: "7d" },
+      {
+        id: user._id,
+        role: user.role,
+      },
+      process.env.JWT_SECRET || "bloghub_secret",
+      {
+        expiresIn: "7d",
+      },
     );
 
     const { password: _, ...userSafe } = user._doc;
@@ -78,10 +107,14 @@ router.post("/login", async (req, res) => {
       user: userSafe,
     });
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    console.error("Login error:", error.message);
+    res.status(500).json({
+      message: "Server error",
+    });
   }
 });
 
+// CẬP NHẬT AVATAR
 router.put(
   "/avatar",
   verifyToken,
@@ -89,9 +122,10 @@ router.put(
   async (req, res) => {
     try {
       if (!req.file) {
-        return res
-          .status(400)
-          .json({ success: false, message: "No file chosen" });
+        return res.status(400).json({
+          success: false,
+          message: "No file chosen",
+        });
       }
 
       const userId = req.user.id || req.user._id || req.user.userId;
@@ -109,8 +143,11 @@ router.put(
         avatar: updatedUser.avatar,
       });
     } catch (error) {
-      console.log("Failed to upload avatar:", error.message);
-      res.status(500).json({ success: false, message: "Server error" });
+      console.error("Failed to upload avatar:", error.message);
+      res.status(500).json({
+        success: false,
+        message: "Server error",
+      });
     }
   },
 );
