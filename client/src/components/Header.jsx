@@ -14,8 +14,8 @@ import {
   Search,
 } from "lucide-react";
 
-const API = import.meta.env.VITE_API_URL + "/api";
-const SOCKET_URL = import.meta.env.VITE_API_URL;
+const API = "http://localhost:5000/api";
+const SOCKET_URL = "http://localhost:5000";
 
 export default function Header() {
   const [open, setOpen] = useState(false);

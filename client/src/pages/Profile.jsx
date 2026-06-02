@@ -5,8 +5,8 @@ import { useDarkMode } from "../context/DarkModeContext";
 import axios from "axios";
 import { io } from "socket.io-client";
 
-const API = import.meta.env.VITE_API_URL + "/api";
-const SOCKET_URL = import.meta.env.VITE_API_URL;
+const API = "http://localhost:5000/api";
+const SOCKET_URL = "http://localhost:5000";
 
 export default function Profile() {
   const navigate = useNavigate();

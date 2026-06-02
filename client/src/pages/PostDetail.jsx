@@ -3,8 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { useDarkMode } from "../context/DarkModeContext";
 
-const API = import.meta.env.VITE_API_URL + "/api";
-const SOCKET_URL = import.meta.env.VITE_API_URL;
+const API = "http://localhost:5000/api";
 
 export default function PostDetail() {
   const { id } = useParams();

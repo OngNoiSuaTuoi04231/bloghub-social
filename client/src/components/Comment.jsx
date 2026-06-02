@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const API = import.meta.env.VITE_API_URL + "/api";
-const SOCKET_URL = import.meta.env.VITE_API_URL;
+const API = "http://localhost:5000/api";
+const SOCKET_URL = "http://localhost:5000";
 
 function formatTime(dateString) {
   if (!dateString) return "Vừa xong";
