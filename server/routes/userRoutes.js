@@ -7,8 +7,13 @@ const Notification = require("../models/Notification");
 
 const sanitize = (str) =>
   typeof str === "string"
-    ? str.trim().replace(/<[^>]*>/g, "").replace(/[<>'"]/g, "")
+    ? str
+        .trim()
+        .replace(/<[^>]*>/g, "")
+        .replace(/[<>'"]/g, "")
     : "";
+
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const sameId = (a, b) => String(a) === String(b);
 
@@ -18,7 +23,7 @@ const getUserId = (req) => req.user.id || req.user._id || req.user.userId;
 
 router.get("/search", verifyToken, async (req, res) => {
   try {
-    const keyword = req.query.q?.trim();
+    const keyword = sanitize(req.query.q || "");
 
     if (!keyword) {
       return res.json({
@@ -29,7 +34,7 @@ router.get("/search", verifyToken, async (req, res) => {
 
     const users = await User.find({
       username: {
-        $regex: keyword,
+        $regex: escapeRegex(keyword),
         $options: "i",
       },
     })
@@ -41,7 +46,7 @@ router.get("/search", verifyToken, async (req, res) => {
       users,
     });
   } catch (error) {
-    console.error("Search user error:", error.message);
+    console.error("Search user error:", error);
 
     res.status(500).json({
       success: false,
@@ -386,7 +391,7 @@ router.get("/:id/friends", verifyToken, async (req, res) => {
     const followingIds = user.following.map((u) => String(u._id));
 
     const friends = user.followers.filter((follower) =>
-      followingIds.includes(String(follower._id))
+      followingIds.includes(String(follower._id)),
     );
 
     res.json({
@@ -419,7 +424,7 @@ router.put("/profile", verifyToken, async (req, res) => {
     const user = await User.findByIdAndUpdate(
       userId,
       { bio },
-      { new: true }
+      { new: true },
     ).select("-password");
 
     if (!user) {

@@ -71,6 +71,11 @@ export default function Header() {
       try {
         const token = localStorage.getItem("token");
 
+        if (!token) {
+          setSearchResults([]);
+          return;
+        }
+
         if (!search.trim()) {
           setSearchResults([]);
           return;
