@@ -2,11 +2,14 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API = "http://localhost:5000/api";
+const API = import.meta.env.VITE_API_URL + "/api";
+const SOCKET_URL = import.meta.env.VITE_API_URL;
 
 function MI({ name, className = "" }) {
   return (
-    <span className={`material-icons-round select-none leading-none ${className}`}>
+    <span
+      className={`material-icons-round select-none leading-none ${className}`}
+    >
       {name}
     </span>
   );
@@ -75,7 +78,7 @@ function BarChart({ chartData, dark }) {
       item.comments || 0,
       item.notifications || 0,
     ]),
-    1
+    1,
   );
 
   const series = [
@@ -102,9 +105,7 @@ function BarChart({ chartData, dark }) {
       </h2>
 
       <p
-        className={`text-sm mb-6 ${
-          dark ? "text-violet-500" : "text-gray-500"
-        }`}
+        className={`text-sm mb-6 ${dark ? "text-violet-500" : "text-gray-500"}`}
       >
         Thống kê dữ liệu trong database
       </p>
@@ -128,7 +129,7 @@ function BarChart({ chartData, dark }) {
                         const value = day[item.key] || 0;
                         const height = `${Math.max(
                           (value / maxValue) * 230,
-                          value > 0 ? 8 : 0
+                          value > 0 ? 8 : 0,
                         )}px`;
 
                         return (
@@ -139,10 +140,10 @@ function BarChart({ chartData, dark }) {
                               item.key === "users"
                                 ? "bg-indigo-500"
                                 : item.key === "posts"
-                                ? "bg-violet-500"
-                                : item.key === "comments"
-                                ? "bg-emerald-500"
-                                : "bg-pink-500"
+                                  ? "bg-violet-500"
+                                  : item.key === "comments"
+                                    ? "bg-emerald-500"
+                                    : "bg-pink-500"
                             }`}
                             style={{ height }}
                           />
@@ -171,10 +172,10 @@ function BarChart({ chartData, dark }) {
                     item.key === "users"
                       ? "bg-indigo-500"
                       : item.key === "posts"
-                      ? "bg-violet-500"
-                      : item.key === "comments"
-                      ? "bg-emerald-500"
-                      : "bg-pink-500"
+                        ? "bg-violet-500"
+                        : item.key === "comments"
+                          ? "bg-emerald-500"
+                          : "bg-pink-500"
                   }`}
                 />
                 <span
@@ -205,8 +206,8 @@ function NavItem({ icon, label, active, onClick, dark }) {
               ? "bg-violet-900/60 text-violet-300"
               : "bg-indigo-50 text-indigo-600"
             : dark
-            ? "text-violet-600 hover:bg-violet-900/30"
-            : "text-gray-600 hover:bg-gray-50"
+              ? "text-violet-600 hover:bg-violet-900/30"
+              : "text-gray-600 hover:bg-gray-50"
         }`}
     >
       <MI name={icon} className="text-[18px]" />
@@ -265,8 +266,7 @@ function ModerationCard({ item, dark, onDelete, onApprove }) {
         </p>
 
         {item.mediaUrl &&
-          (item.mediaType === "image" ||
-            item.mediaType === "image_locket") && (
+          (item.mediaType === "image" || item.mediaType === "image_locket") && (
             <img
               src={item.mediaUrl}
               alt="post"
@@ -344,11 +344,11 @@ export default function Admin() {
 
   useEffect(() => {
     fetchData();
-  
+
     const interval = setInterval(() => {
       fetchData();
     }, 3000);
-  
+
     return () => clearInterval(interval);
   }, []);
 
@@ -377,19 +377,21 @@ export default function Admin() {
   };
 
   const deleteUser = async (id) => {
-    const confirmDelete = window.confirm("Bạn có chắc muốn xóa người dùng này?");
-  
+    const confirmDelete = window.confirm(
+      "Bạn có chắc muốn xóa người dùng này?",
+    );
+
     if (!confirmDelete) return;
-  
+
     try {
       const token = localStorage.getItem("token");
-  
+
       await axios.delete(`${API}/admin/users/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       fetchData();
     } catch {
       alert("Xóa người dùng thất bại");
@@ -416,7 +418,7 @@ export default function Admin() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       fetchData();
@@ -428,7 +430,7 @@ export default function Admin() {
   const filteredUsers = users.filter((u) =>
     searchQuery
       ? u.username?.toLowerCase().includes(searchQuery.toLowerCase())
-      : true
+      : true,
   );
 
   return (
@@ -516,9 +518,7 @@ export default function Admin() {
               : "bg-white border-gray-100"
           }
           ${
-            sidebarOpen
-              ? "translate-x-0"
-              : "-translate-x-full lg:translate-x-0"
+            sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
           }`}
         >
           <p
@@ -658,12 +658,12 @@ export default function Admin() {
                       {user.role || "user"}
                     </span>
                     <button
-  type="button"
-  onClick={() => deleteUser(user._id)}
-  className="text-xs px-3 py-1 rounded-full bg-red-50 text-red-600 font-bold hover:bg-red-100 transition"
->
-  Delete
-</button>
+                      type="button"
+                      onClick={() => deleteUser(user._id)}
+                      className="text-xs px-3 py-1 rounded-full bg-red-50 text-red-600 font-bold hover:bg-red-100 transition"
+                    >
+                      Delete
+                    </button>
                   </div>
                 ))}
               </div>

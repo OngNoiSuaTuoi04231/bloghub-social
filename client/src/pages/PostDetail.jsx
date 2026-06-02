@@ -3,7 +3,8 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { useDarkMode } from "../context/DarkModeContext";
 
-const API = "http://localhost:5000/api";
+const API = import.meta.env.VITE_API_URL + "/api";
+const SOCKET_URL = import.meta.env.VITE_API_URL;
 
 export default function PostDetail() {
   const { id } = useParams();
@@ -26,7 +27,7 @@ export default function PostDetail() {
   const fetchRepliesRecursive = async (parentId) => {
     try {
       const res = await axios.get(
-        `${API}/posts/${id}/comments?parentId=${parentId}`
+        `${API}/posts/${id}/comments?parentId=${parentId}`,
       );
 
       const replies = res.data.comments || [];
@@ -39,7 +40,7 @@ export default function PostDetail() {
             ...reply,
             replies: childReplies,
           };
-        })
+        }),
       );
 
       return nestedReplies;
@@ -61,7 +62,7 @@ export default function PostDetail() {
             ...comment,
             replies,
           };
-        })
+        }),
       );
 
       setComments(commentsWithReplies);
@@ -77,10 +78,10 @@ export default function PostDetail() {
 
   const handleSendComment = async () => {
     if (!commentText.trim()) return;
-  
+
     try {
       const token = localStorage.getItem("token");
-  
+
       const res = await axios.post(
         `${API}/posts/${id}/comments`,
         { content: commentText },
@@ -88,9 +89,9 @@ export default function PostDetail() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
-  
+
       if (res.data.success) {
         setComments((prev) => [
           {
@@ -99,7 +100,7 @@ export default function PostDetail() {
           },
           ...prev,
         ]);
-  
+
         setCommentText("");
       }
     } catch (error) {
@@ -125,7 +126,7 @@ export default function PostDetail() {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
       );
 
       setReplyText({
@@ -143,17 +144,13 @@ export default function PostDetail() {
     return (
       <div
         key={reply._id}
-        className={`rounded-lg p-3 ${
-          dark ? "bg-[#130d28]" : "bg-white"
-        }`}
+        className={`rounded-lg p-3 ${dark ? "bg-[#130d28]" : "bg-white"}`}
       >
         <p className="font-semibold text-sm">{reply.authorName}</p>
 
         <p
           className={
-            dark
-              ? "text-violet-200 text-sm mt-1"
-              : "text-gray-700 text-sm mt-1"
+            dark ? "text-violet-200 text-sm mt-1" : "text-gray-700 text-sm mt-1"
           }
         >
           {reply.content}
@@ -161,9 +158,7 @@ export default function PostDetail() {
 
         <p
           className={
-            dark
-              ? "text-violet-600 text-xs mt-1"
-              : "text-gray-400 text-xs mt-1"
+            dark ? "text-violet-600 text-xs mt-1" : "text-gray-400 text-xs mt-1"
           }
         >
           {new Date(reply.createdAt).toLocaleString("vi-VN")}
@@ -198,7 +193,7 @@ export default function PostDetail() {
         {reply.replies?.length > 0 && (
           <div className="mt-3 ml-6 flex flex-col gap-2">
             {reply.replies.map((childReply) =>
-              renderReply(childReply, level + 1)
+              renderReply(childReply, level + 1),
             )}
           </div>
         )}
@@ -265,9 +260,7 @@ export default function PostDetail() {
 
         {/* LIKE COUNT */}
         <div className="flex items-center gap-2 mb-4">
-          <span className={dark ? "text-pink-400" : "text-pink-500"}>
-            ❤
-          </span>
+          <span className={dark ? "text-pink-400" : "text-pink-500"}>❤</span>
 
           <span
             className={`text-sm font-semibold ${
@@ -278,8 +271,7 @@ export default function PostDetail() {
           </span>
         </div>
 
-        {(post.mediaType === "image" ||
-          post.mediaType === "image_locket") &&
+        {(post.mediaType === "image" || post.mediaType === "image_locket") &&
           post.mediaUrl && (
             <img
               src={post.mediaUrl}

@@ -354,11 +354,14 @@ function Register() {
     setToast({ msg: "", ok: true });
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", {
-        username,
-        email,
-        password,
-      });
+      const res = await axios.post(
+        `${import.meta.env.VITE_SERVER_URL}/api/auth/register`,
+        {
+          username,
+          email,
+          password,
+        },
+      );
 
       setToast({
         msg: res.data.message || "Account created successfully!",
@@ -616,7 +619,7 @@ function Register() {
 
           <div className="grid grid-cols-2 gap-3">
             <a
-              href="http://localhost:5000/api/auth/google"
+              href={`${import.meta.env.VITE_SERVER_URL}/api/auth/google`}
               className={`flex items-center justify-center gap-2 py-[13px] rounded-2xl
                 text-[13.5px] font-semibold border
                 active:scale-95 transition-all duration-300 cursor-pointer no-underline
@@ -630,7 +633,7 @@ function Register() {
             </a>
 
             <a
-              href="http://localhost:5000/api/auth/facebook"
+              href={`${import.meta.env.VITE_SERVER_URL}/api/auth/facebook`}
               className={`flex items-center justify-center gap-2 py-[13px] rounded-2xl
                 text-[13.5px] font-semibold border
                 active:scale-95 transition-all duration-300 cursor-pointer no-underline

@@ -14,8 +14,8 @@ import {
   Search,
 } from "lucide-react";
 
-const API = "http://localhost:5000/api";
-const SOCKET_URL = "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL + "/api";
+const SOCKET_URL = import.meta.env.VITE_API_URL;
 
 export default function Header() {
   const [open, setOpen] = useState(false);
@@ -183,12 +183,42 @@ export default function Header() {
                 strokeDasharray="2 2"
               />
 
-              <path d="M18 23 C18 23 24 24 32 24" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M18 30 C18 30 24 31 32 31" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M18 37 C18 37 24 38 32 38" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M46 23 C46 23 40 24 32 24" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M46 30 C46 30 40 31 32 31" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-              <path d="M46 37 C46 37 40 38 32 38" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <path
+                d="M18 23 C18 23 24 24 32 24"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M18 30 C18 30 24 31 32 31"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M18 37 C18 37 24 38 32 38"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M46 23 C46 23 40 24 32 24"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M46 30 C46 30 40 31 32 31"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
+              <path
+                d="M46 37 C46 37 40 38 32 38"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+              />
 
               <circle cx="52" cy="13" r="3.5" fill="white" fillOpacity="0.85" />
               <circle cx="13" cy="11" r="2.5" fill="white" fillOpacity="0.55" />
@@ -286,8 +316,8 @@ export default function Header() {
                   isActive
                     ? "bg-violet-500/20 text-violet-300"
                     : dark
-                    ? "text-gray-300 hover:bg-violet-500/10 hover:text-violet-300"
-                    : "text-gray-700 hover:bg-violet-50 hover:text-violet-600"
+                      ? "text-gray-300 hover:bg-violet-500/10 hover:text-violet-300"
+                      : "text-gray-700 hover:bg-violet-50 hover:text-violet-600"
                 }`
               }
             >
@@ -300,7 +330,9 @@ export default function Header() {
             type="button"
             onClick={handleLogout}
             className={`flex items-center gap-2 rounded-xl px-4 py-2 transition-all duration-300 ${
-              dark ? "text-red-300 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"
+              dark
+                ? "text-red-300 hover:bg-red-500/10"
+                : "text-red-500 hover:bg-red-50"
             }`}
           >
             <LogOut size={20} />
@@ -314,7 +346,9 @@ export default function Header() {
             type="button"
             onClick={() => setShowMobileSearch(!showMobileSearch)}
             className={`rounded-xl p-2 transition ${
-              dark ? "text-white hover:bg-white/10" : "text-gray-700 hover:bg-gray-100"
+              dark
+                ? "text-white hover:bg-white/10"
+                : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             <Search size={23} />
@@ -324,7 +358,9 @@ export default function Header() {
             type="button"
             onClick={() => setOpen(!open)}
             className={`rounded-xl p-2 transition ${
-              dark ? "text-white hover:bg-white/10" : "text-gray-700 hover:bg-gray-100"
+              dark
+                ? "text-white hover:bg-white/10"
+                : "text-gray-700 hover:bg-gray-100"
             }`}
           >
             {open ? <X size={24} /> : <Menu size={24} />}
@@ -420,8 +456,8 @@ export default function Header() {
                     isActive
                       ? "bg-violet-500/20 text-violet-300"
                       : dark
-                      ? "text-gray-300 hover:bg-violet-500/10 hover:text-violet-300"
-                      : "text-gray-700 hover:bg-violet-50 hover:text-violet-600"
+                        ? "text-gray-300 hover:bg-violet-500/10 hover:text-violet-300"
+                        : "text-gray-700 hover:bg-violet-50 hover:text-violet-600"
                   }`
                 }
               >
@@ -437,7 +473,9 @@ export default function Header() {
                 handleLogout();
               }}
               className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-300 ${
-                dark ? "text-red-300 hover:bg-red-500/10" : "text-red-500 hover:bg-red-50"
+                dark
+                  ? "text-red-300 hover:bg-red-500/10"
+                  : "text-red-500 hover:bg-red-50"
               }`}
             >
               <LogOut size={20} />

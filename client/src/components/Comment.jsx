@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const API = "http://localhost:5000/api";
-const SOCKET_URL = "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL + "/api";
+const SOCKET_URL = import.meta.env.VITE_API_URL;
 
 function formatTime(dateString) {
   if (!dateString) return "Vừa xong";
@@ -38,9 +38,7 @@ function Comment({ postId, dark }) {
     socket.on("comment_updated", (updatedComment) => {
       if (!updatedComment.parentId) {
         setComments((prev) =>
-          prev.map((c) =>
-            c._id === updatedComment._id ? updatedComment : c
-          )
+          prev.map((c) => (c._id === updatedComment._id ? updatedComment : c)),
         );
       }
     });
@@ -216,9 +214,7 @@ function CommentItem({ comment, postId, dark }) {
 
       if (String(updatedComment.parentId) === String(localComment._id)) {
         setReplies((prev) =>
-          prev.map((r) =>
-            r._id === updatedComment._id ? updatedComment : r
-          )
+          prev.map((r) => (r._id === updatedComment._id ? updatedComment : r)),
         );
       }
     });
@@ -258,7 +254,7 @@ function CommentItem({ comment, postId, dark }) {
 
     try {
       const res = await fetch(
-        `${API}/posts/${postId}/comments?parentId=${localComment._id}`
+        `${API}/posts/${postId}/comments?parentId=${localComment._id}`,
       );
 
       const data = await res.json();
@@ -364,7 +360,7 @@ function CommentItem({ comment, postId, dark }) {
               commentId: localComment._id,
               parentId: localComment.parentId,
             },
-          })
+          }),
         );
       } else {
         alert(data.message || "Xóa comment thất bại");

@@ -6,8 +6,8 @@ import { useDarkMode } from "../context/DarkModeContext";
 import Comment from "../components/Comment";
 import { io } from "socket.io-client";
 
-const SOCKET_URL = "https://bloghub-social.onrender.com";
-const API = "https://bloghub-social.onrender.com/api";
+const SOCKET_URL = import.meta.env.VITE_SERVER_URL;
+const API = `${import.meta.env.VITE_SERVER_URL}/api`;
 
 function MI({ name, className = "" }) {
   return (
