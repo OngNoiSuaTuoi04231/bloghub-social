@@ -390,7 +390,7 @@ function Login() {
                 >
                   {/* FIX: khi showPassword=false (đang ẩn) → hiện "visibility" (mắt mở) để user biết click vào sẽ xem được
                          khi showPassword=true  (đang hiện) → hiện "visibility_off" (mắt gạch) để user biết click vào sẽ ẩn đi */}
-                  <MI name={showPassword ? "visibility_off" : "visibility"} />
+                  <MI name={showPassword ? "visibility" : "visibility_off"} />
                 </button>
               }
             />
