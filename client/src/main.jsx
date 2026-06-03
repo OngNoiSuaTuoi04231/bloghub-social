@@ -7,10 +7,17 @@ import axios from "axios";
 axios.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    const status = err.response?.status;
+    const isLoginPage = window.location.pathname === "/login";
+    const isRegisterPage = window.location.pathname === "/register";
+    const token = localStorage.getItem("token");
+
+    // Chỉ redirect khi: có token + server thật sự trả 401 + không đang ở login/register
+    if (status === 401 && token && !isLoginPage && !isRegisterPage) {
       localStorage.clear();
       window.location.href = "/login";
     }
+
     return Promise.reject(err);
   },
 );
