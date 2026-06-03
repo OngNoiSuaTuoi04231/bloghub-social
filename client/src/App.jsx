@@ -8,6 +8,7 @@ import Notification from "./pages/Notification";
 import PostDetail from "./pages/PostDetail";
 
 import Layout from "./components/Layout";
+import AdminRoute from "./components/AdminRoute";
 import { DarkModeProvider } from "./context/DarkModeContext";
 
 import {
@@ -20,18 +21,12 @@ import {
 
 import { AnimatePresence } from "framer-motion";
 
-function AdminRoute({ children }) {
+// Bảo vệ trang user — chỉ cần có token
+function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
-
   if (!token) {
     return <Navigate to="/login" replace />;
   }
-
-  if (role !== "admin") {
-    return <Navigate to="/home" replace />;
-  }
-
   return children;
 }
 
@@ -41,24 +36,29 @@ function AnimatedRoutes() {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        {/* Default */}
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Không có Header */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* USER pages */}
-        <Route element={<Layout />}>
+        {/* Các trang cần đăng nhập */}
+        <Route
+          element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }
+        >
           <Route path="/home" element={<Home />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/createpost" element={<CreatePost />} />
+          <Route path="/CreatePost" element={<CreatePost />} />
           <Route path="/notification" element={<Notification />} />
           <Route path="/post/:id" element={<PostDetail />} />
           <Route path="/profile/:userId" element={<Profile />} />
         </Route>
 
-        {/* ADMIN page riêng */}
+        {/* Trang admin */}
         <Route
           path="/admin"
           element={
