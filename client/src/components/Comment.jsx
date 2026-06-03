@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { io } from "socket.io-client";
+import axios from "axios";
 
 const API = "https://bloghub-social.onrender.com/api";
 const SOCKET_URL = "https://bloghub-social.onrender.com";
 
 function formatTime(dateString) {
   if (!dateString) return "Vừa xong";
-
   return new Date(dateString).toLocaleString("vi-VN", {
     hour: "2-digit",
     minute: "2-digit",
@@ -19,11 +19,14 @@ function formatTime(dateString) {
 function Comment({ postId, dark }) {
   const [comments, setComments] = useState([]);
   const [content, setContent] = useState("");
+  const socketRef = useRef(null);
 
   useEffect(() => {
     if (!postId) return;
 
+    // 1 socket duy nhất cho toàn bộ comment section
     const socket = io(SOCKET_URL);
+    socketRef.current = socket;
     socket.emit("join_post_room", postId);
 
     socket.on("new_comment_received", (newComment) => {
@@ -49,10 +52,10 @@ function Comment({ postId, dark }) {
       }
     });
 
-    fetch(`${API}/posts/${postId}/comments`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setComments(data.comments);
+    axios
+      .get(`${API}/posts/${postId}/comments`)
+      .then((res) => {
+        if (res.data.success) setComments(res.data.comments);
       })
       .catch((err) => console.error("Lỗi lấy comment:", err));
 
@@ -65,46 +68,30 @@ function Comment({ postId, dark }) {
   useEffect(() => {
     const handleLocalDelete = (e) => {
       const { commentId, parentId } = e.detail;
-
       if (!parentId) {
         setComments((prev) => prev.filter((c) => c._id !== commentId));
       }
     };
-
     window.addEventListener("comment_deleted_local", handleLocalDelete);
-
-    return () => {
+    return () =>
       window.removeEventListener("comment_deleted_local", handleLocalDelete);
-    };
   }, []);
 
   const handleSubmitComment = async (e) => {
     e.preventDefault();
-
     if (!content.trim()) return;
-
     const token = localStorage.getItem("token");
-
     try {
-      const res = await fetch(`${API}/posts/${postId}/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          content,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
+      const res = await axios.post(
+        `${API}/posts/${postId}/comments`,
+        { content },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (res.data.success) {
         setComments((prev) => {
-          if (prev.some((c) => c._id === data.comment._id)) return prev;
-          return [data.comment, ...prev];
+          if (prev.some((c) => c._id === res.data.comment._id)) return prev;
+          return [res.data.comment, ...prev];
         });
-
         setContent("");
       }
     } catch (err) {
@@ -133,7 +120,6 @@ function Comment({ postId, dark }) {
                 : "text-gray-700 placeholder-gray-400"
             }`}
           />
-
           <button
             type="submit"
             className={`transition-all active:scale-90 ${
@@ -150,9 +136,7 @@ function Comment({ postId, dark }) {
       <div className="flex flex-col gap-3">
         {comments.length === 0 ? (
           <p
-            className={`text-[12px] text-center py-3 ${
-              dark ? "text-violet-500" : "text-gray-400"
-            }`}
+            className={`text-[12px] text-center py-3 ${dark ? "text-violet-500" : "text-gray-400"}`}
           >
             Be the first to comment!
           </p>
@@ -163,6 +147,7 @@ function Comment({ postId, dark }) {
               comment={comment}
               postId={postId}
               dark={dark}
+              socket={socketRef.current}
             />
           ))
         )}
@@ -171,7 +156,7 @@ function Comment({ postId, dark }) {
   );
 }
 
-function CommentItem({ comment, postId, dark }) {
+function CommentItem({ comment, postId, dark, socket }) {
   const [localComment, setLocalComment] = useState(comment);
   const [replies, setReplies] = useState([]);
   const [showReplies, setShowReplies] = useState(false);
@@ -181,7 +166,6 @@ function CommentItem({ comment, postId, dark }) {
   const [editText, setEditText] = useState(comment.content);
 
   const currentUserId = localStorage.getItem("userId");
-
   const isOwner =
     String(localComment.authorId?._id || localComment.authorId) ===
     String(currentUserId);
@@ -191,59 +175,59 @@ function CommentItem({ comment, postId, dark }) {
     setEditText(comment.content);
   }, [comment]);
 
+  // Dùng socket truyền từ parent, không tạo socket mới
   useEffect(() => {
-    const socket = io(SOCKET_URL);
-    socket.emit("join_post_room", postId);
+    if (!socket) return;
 
-    socket.on("new_comment_received", (newComment) => {
+    const onNewComment = (newComment) => {
       if (String(newComment.parentId) === String(localComment._id)) {
         setReplies((prev) => {
           if (prev.some((r) => r._id === newComment._id)) return prev;
           return [newComment, ...prev];
         });
-
         setShowReplies(true);
       }
-    });
+    };
 
-    socket.on("comment_updated", (updatedComment) => {
+    const onUpdated = (updatedComment) => {
       if (String(updatedComment._id) === String(localComment._id)) {
         setLocalComment(updatedComment);
         setEditText(updatedComment.content);
       }
-
       if (String(updatedComment.parentId) === String(localComment._id)) {
         setReplies((prev) =>
           prev.map((r) => (r._id === updatedComment._id ? updatedComment : r)),
         );
       }
-    });
+    };
 
-    socket.on("comment_deleted", ({ commentId, parentId }) => {
+    const onDeleted = ({ commentId, parentId }) => {
       if (String(parentId) === String(localComment._id)) {
         setReplies((prev) => prev.filter((r) => r._id !== commentId));
       }
-    });
+    };
+
+    socket.on("new_comment_received", onNewComment);
+    socket.on("comment_updated", onUpdated);
+    socket.on("comment_deleted", onDeleted);
 
     return () => {
-      socket.disconnect();
+      socket.off("new_comment_received", onNewComment);
+      socket.off("comment_updated", onUpdated);
+      socket.off("comment_deleted", onDeleted);
     };
-  }, [postId, localComment._id]);
+  }, [socket, localComment._id]);
 
   useEffect(() => {
     const handleLocalDelete = (e) => {
       const { commentId, parentId } = e.detail;
-
       if (String(parentId) === String(localComment._id)) {
         setReplies((prev) => prev.filter((r) => r._id !== commentId));
       }
     };
-
     window.addEventListener("comment_deleted_local", handleLocalDelete);
-
-    return () => {
+    return () =>
       window.removeEventListener("comment_deleted_local", handleLocalDelete);
-    };
   }, [localComment._id]);
 
   const loadReplies = async () => {
@@ -251,16 +235,12 @@ function CommentItem({ comment, postId, dark }) {
       setShowReplies(false);
       return;
     }
-
     try {
-      const res = await fetch(
+      const res = await axios.get(
         `${API}/posts/${postId}/comments?parentId=${localComment._id}`,
       );
-
-      const data = await res.json();
-
-      if (data.success) {
-        setReplies(data.comments || []);
+      if (res.data.success) {
+        setReplies(res.data.comments || []);
         setShowReplies(true);
       }
     } catch (err) {
@@ -270,32 +250,19 @@ function CommentItem({ comment, postId, dark }) {
 
   const handleReply = async (e) => {
     e.preventDefault();
-
     if (!replyText.trim()) return;
-
     const token = localStorage.getItem("token");
-
     try {
-      const res = await fetch(`${API}/posts/${postId}/comments`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          content: replyText,
-          parentId: localComment._id,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
+      const res = await axios.post(
+        `${API}/posts/${postId}/comments`,
+        { content: replyText, parentId: localComment._id },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (res.data.success) {
         setReplies((prev) => {
-          if (prev.some((r) => r._id === data.comment._id)) return prev;
-          return [data.comment, ...prev];
+          if (prev.some((r) => r._id === res.data.comment._id)) return prev;
+          return [res.data.comment, ...prev];
         });
-
         setReplyText("");
         setOpenReply(false);
         setShowReplies(true);
@@ -307,29 +274,19 @@ function CommentItem({ comment, postId, dark }) {
 
   const handleEdit = async () => {
     if (!editText.trim()) return;
-
     const token = localStorage.getItem("token");
-
     try {
-      const res = await fetch(`${API}/posts/comments/${localComment._id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          content: editText,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-        setLocalComment(data.comment);
-        setEditText(data.comment.content);
+      const res = await axios.put(
+        `${API}/posts/comments/${localComment._id}`,
+        { content: editText },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (res.data.success) {
+        setLocalComment(res.data.comment);
+        setEditText(res.data.comment.content);
         setEditing(false);
       } else {
-        alert(data.message || "Sửa comment thất bại");
+        alert(res.data.message || "Sửa comment thất bại");
       }
     } catch (err) {
       console.error("Edit comment error:", err);
@@ -340,20 +297,13 @@ function CommentItem({ comment, postId, dark }) {
   const handleDelete = async () => {
     const ok = window.confirm("Bạn có chắc muốn xóa comment này không?");
     if (!ok) return;
-
     const token = localStorage.getItem("token");
-
     try {
-      const res = await fetch(`${API}/posts/comments/${localComment._id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
+      const res = await axios.delete(
+        `${API}/posts/comments/${localComment._id}`,
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      if (res.data.success) {
         window.dispatchEvent(
           new CustomEvent("comment_deleted_local", {
             detail: {
@@ -363,7 +313,7 @@ function CommentItem({ comment, postId, dark }) {
           }),
         );
       } else {
-        alert(data.message || "Xóa comment thất bại");
+        alert(res.data.message || "Xóa comment thất bại");
       }
     } catch (err) {
       console.error("Delete comment error:", err);
@@ -374,23 +324,16 @@ function CommentItem({ comment, postId, dark }) {
   return (
     <div className="pl-3 border-l border-violet-200/40">
       <div
-        className={`rounded-2xl px-4 py-3 transition-all duration-300 ${
-          dark ? "bg-[#1e1535]" : "bg-gray-50"
-        }`}
+        className={`rounded-2xl px-4 py-3 transition-all duration-300 ${dark ? "bg-[#1e1535]" : "bg-gray-50"}`}
       >
         <div className="flex items-center justify-between gap-3">
           <h4
-            className={`font-bold text-[13px] ${
-              dark ? "text-white" : "text-gray-900"
-            }`}
+            className={`font-bold text-[13px] ${dark ? "text-white" : "text-gray-900"}`}
           >
             {localComment.authorName || "Người dùng"}
           </h4>
-
           <span
-            className={`text-[10px] ${
-              dark ? "text-violet-500" : "text-gray-400"
-            }`}
+            className={`text-[10px] ${dark ? "text-violet-500" : "text-gray-400"}`}
           >
             {formatTime(localComment.createdAt)}
           </span>
@@ -408,7 +351,6 @@ function CommentItem({ comment, postId, dark }) {
                   : "bg-white border-gray-300 text-gray-900"
               }`}
             />
-
             <div className="flex gap-2">
               <button
                 type="button"
@@ -417,7 +359,6 @@ function CommentItem({ comment, postId, dark }) {
               >
                 Done
               </button>
-
               <button
                 type="button"
                 onClick={() => {
@@ -432,17 +373,12 @@ function CommentItem({ comment, postId, dark }) {
           </div>
         ) : (
           <p
-            className={`text-[13px] mt-1 leading-relaxed whitespace-pre-wrap ${
-              dark ? "text-violet-100" : "text-gray-700"
-            }`}
+            className={`text-[13px] mt-1 leading-relaxed whitespace-pre-wrap ${dark ? "text-violet-100" : "text-gray-700"}`}
           >
             {localComment.content}
-
             {localComment.isEdited && (
               <span
-                className={`ml-2 text-[10px] ${
-                  dark ? "text-violet-500" : "text-gray-400"
-                }`}
+                className={`ml-2 text-[10px] ${dark ? "text-violet-500" : "text-gray-400"}`}
               >
                 (đã chỉnh sửa)
               </span>
@@ -455,15 +391,10 @@ function CommentItem({ comment, postId, dark }) {
         <button
           type="button"
           onClick={() => setOpenReply((p) => !p)}
-          className={`text-[11px] font-semibold transition-colors ${
-            dark
-              ? "text-violet-400 hover:text-violet-200"
-              : "text-indigo-500 hover:text-indigo-700"
-          }`}
+          className={`text-[11px] font-semibold transition-colors ${dark ? "text-violet-400 hover:text-violet-200" : "text-indigo-500 hover:text-indigo-700"}`}
         >
           Reply
         </button>
-
         {isOwner && (
           <>
             <button
@@ -472,38 +403,24 @@ function CommentItem({ comment, postId, dark }) {
                 setEditing(true);
                 setEditText(localComment.content);
               }}
-              className={`text-[11px] font-semibold transition-colors ${
-                dark
-                  ? "text-violet-400 hover:text-violet-200"
-                  : "text-indigo-500 hover:text-indigo-700"
-              }`}
+              className={`text-[11px] font-semibold transition-colors ${dark ? "text-violet-400 hover:text-violet-200" : "text-indigo-500 hover:text-indigo-700"}`}
             >
               Edit
             </button>
-
             <button
               type="button"
               onClick={handleDelete}
-              className={`text-[11px] font-semibold transition-colors ${
-                dark
-                  ? "text-red-400 hover:text-red-300"
-                  : "text-red-500 hover:text-red-700"
-              }`}
+              className={`text-[11px] font-semibold transition-colors ${dark ? "text-red-400 hover:text-red-300" : "text-red-500 hover:text-red-700"}`}
             >
               Delete
             </button>
           </>
         )}
-
         {localComment.replyCount > 0 && (
           <button
             type="button"
             onClick={loadReplies}
-            className={`text-[11px] font-bold transition-colors ${
-              dark
-                ? "text-violet-500 hover:text-violet-300"
-                : "text-indigo-500 hover:text-indigo-700"
-            }`}
+            className={`text-[11px] font-bold transition-colors ${dark ? "text-violet-500 hover:text-violet-300" : "text-indigo-500 hover:text-indigo-700"}`}
           >
             {showReplies
               ? "Ẩn phản hồi"
@@ -515,31 +432,18 @@ function CommentItem({ comment, postId, dark }) {
       {openReply && (
         <form onSubmit={handleReply} className="mt-2 ml-2">
           <div
-            className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${
-              dark
-                ? "bg-[#1a1330] border-violet-800"
-                : "bg-white border-gray-200"
-            }`}
+            className={`flex items-center gap-2 rounded-xl px-3 py-2 border ${dark ? "bg-[#1a1330] border-violet-800" : "bg-white border-gray-200"}`}
           >
             <input
               type="text"
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               placeholder="Viết phản hồi..."
-              className={`flex-1 bg-transparent text-[12px] outline-none ${
-                dark
-                  ? "text-violet-100 placeholder-violet-700"
-                  : "text-gray-700 placeholder-gray-400"
-              }`}
+              className={`flex-1 bg-transparent text-[12px] outline-none ${dark ? "text-violet-100 placeholder-violet-700" : "text-gray-700 placeholder-gray-400"}`}
             />
-
             <button
               type="submit"
-              className={`transition-all active:scale-90 ${
-                dark
-                  ? "text-violet-400 hover:text-violet-200"
-                  : "text-indigo-500 hover:text-indigo-700"
-              }`}
+              className={`transition-all active:scale-90 ${dark ? "text-violet-400 hover:text-violet-200" : "text-indigo-500 hover:text-indigo-700"}`}
             >
               <span className="material-icons-round text-[18px]">send</span>
             </button>
@@ -555,6 +459,7 @@ function CommentItem({ comment, postId, dark }) {
               comment={reply}
               postId={postId}
               dark={dark}
+              socket={socket}
             />
           ))}
         </div>
