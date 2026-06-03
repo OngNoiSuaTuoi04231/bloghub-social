@@ -214,6 +214,17 @@ export default function Profile() {
       );
 
       setRelationship("pending");
+
+      // FIX: fetch lại từ server để đảm bảo đúng trạng thái
+      const relationRes = await axios.get(
+        `${API}/users/relationship/${profileUserId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+      setRelationship(relationRes.data.status || "none");
     } catch (error) {
       console.log("Follow error:", error.response?.data || error.message);
       alert("Follow thất bại");
