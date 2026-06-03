@@ -75,16 +75,10 @@ function InputField({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           autoComplete={autoComplete || "off"}
-          style={{
-            WebkitAppearance: "none",
-            MozAppearance: "none",
-            appearance: "none",
-          }}
+          style={{}}
           className={`flex-1 bg-transparent text-[14px] outline-none transition-colors duration-300
             [&::-ms-reveal]:hidden
             [&::-ms-clear]:hidden
-            [&::-webkit-credentials-auto-fill-button]:hidden
-            [&::-webkit-textfield-decoration-container]:hidden
             ${
               dark
                 ? "text-violet-100 placeholder-violet-700"
