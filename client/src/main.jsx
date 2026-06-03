@@ -8,12 +8,10 @@ axios.interceptors.response.use(
   (res) => res,
   (err) => {
     const status = err.response?.status;
-    const isLoginPage = window.location.pathname === "/login";
-    const isRegisterPage = window.location.pathname === "/register";
     const token = localStorage.getItem("token");
+    const path = window.location.pathname;
 
-    // Chỉ redirect khi: có token + server thật sự trả 401 + không đang ở login/register
-    if (status === 401 && token && !isLoginPage && !isRegisterPage) {
+    if (status === 401 && token && path !== "/login" && path !== "/register") {
       localStorage.clear();
       window.location.href = "/login";
     }
@@ -22,8 +20,4 @@ axios.interceptors.response.use(
   },
 );
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+createRoot(document.getElementById("root")).render(<App />);

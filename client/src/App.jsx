@@ -8,7 +8,6 @@ import Notification from "./pages/Notification";
 import PostDetail from "./pages/PostDetail";
 
 import Layout from "./components/Layout";
-import AdminRoute from "./components/AdminRoute";
 import { DarkModeProvider } from "./context/DarkModeContext";
 
 import {
@@ -21,11 +20,23 @@ import {
 
 import { AnimatePresence } from "framer-motion";
 
-// Bảo vệ trang user — chỉ cần có token
 function PrivateRoute({ children }) {
   const token = localStorage.getItem("token");
   if (!token) {
     return <Navigate to="/login" replace />;
+  }
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role");
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  if (role !== "admin") {
+    return <Navigate to="/home" replace />;
   }
   return children;
 }
@@ -41,7 +52,6 @@ function AnimatedRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Các trang cần đăng nhập */}
         <Route
           element={
             <PrivateRoute>
@@ -58,7 +68,6 @@ function AnimatedRoutes() {
           <Route path="/profile/:userId" element={<Profile />} />
         </Route>
 
-        {/* Trang admin */}
         <Route
           path="/admin"
           element={

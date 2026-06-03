@@ -2,10 +2,8 @@ import { useDarkMode } from "../context/DarkModeContext";
 import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
-
 import { motion } from "framer-motion";
 
-/* ───────────────────────────────────────────── */
 function MI({ name, className = "" }) {
   return (
     <span
@@ -16,7 +14,6 @@ function MI({ name, className = "" }) {
   );
 }
 
-/* ───────────────────────────────────────────── */
 function InputField({
   label,
   id,
@@ -81,15 +78,10 @@ function InputField({
             appearance: "none",
           }}
           className={`flex-1 bg-transparent text-[14px] outline-none transition-colors duration-300
-            [&::-ms-reveal]:hidden
-            [&::-ms-clear]:hidden
+            [&::-ms-reveal]:hidden [&::-ms-clear]:hidden
             [&::-webkit-credentials-auto-fill-button]:hidden
             [&::-webkit-textfield-decoration-container]:hidden
-            ${
-              dark
-                ? "text-violet-100 placeholder-violet-700"
-                : "text-gray-700 placeholder-gray-400"
-            }`}
+            ${dark ? "text-violet-100 placeholder-violet-700" : "text-gray-700 placeholder-gray-400"}`}
         />
 
         {rightEl}
@@ -98,7 +90,6 @@ function InputField({
   );
 }
 
-/* ───────────────────────────────────────────── */
 function Toast({ msg, ok, dark }) {
   if (!msg) return null;
 
@@ -121,7 +112,6 @@ function Toast({ msg, ok, dark }) {
   );
 }
 
-/* ───────────────────────────────────────────── */
 function LeftPanel({ dark }) {
   return (
     <div
@@ -135,28 +125,19 @@ function LeftPanel({ dark }) {
       }`}
     >
       <div
-        className={`absolute -top-16 -left-16 w-60 h-60 rounded-full
-        ${dark ? "bg-violet-500/10" : "bg-white/10"}`}
+        className={`absolute -top-16 -left-16 w-60 h-60 rounded-full ${dark ? "bg-violet-500/10" : "bg-white/10"}`}
       />
       <div
-        className={`absolute -bottom-12 -right-12 w-52 h-52 rounded-full
-        ${dark ? "bg-purple-400/10" : "bg-white/10"}`}
+        className={`absolute -bottom-12 -right-12 w-52 h-52 rounded-full ${dark ? "bg-purple-400/10" : "bg-white/10"}`}
       />
       <div
-        className={`absolute top-1/3 right-0 w-32 h-32 rounded-full
-        ${dark ? "bg-indigo-400/5" : "bg-white/5"}`}
+        className={`absolute top-1/3 right-0 w-32 h-32 rounded-full ${dark ? "bg-indigo-400/5" : "bg-white/5"}`}
       />
 
       {dark && (
         <>
-          <div
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-            w-64 h-64 rounded-full bg-violet-600/20 blur-3xl pointer-events-none"
-          />
-          <div
-            className="absolute top-1/4 left-1/4
-            w-32 h-32 rounded-full bg-indigo-500/20 blur-2xl pointer-events-none"
-          />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-violet-600/20 blur-3xl pointer-events-none" />
+          <div className="absolute top-1/4 left-1/4 w-32 h-32 rounded-full bg-indigo-500/20 blur-2xl pointer-events-none" />
         </>
       )}
 
@@ -190,10 +171,7 @@ function LeftPanel({ dark }) {
         </h2>
 
         <p
-          className={`text-sm lg:text-[15px] leading-relaxed max-w-[240px] lg:max-w-[280px]
-          text-center mx-auto
-          [font-family:'Poppins',sans-serif]
-          ${dark ? "text-violet-300" : "text-indigo-100"}`}
+          className={`text-sm lg:text-[15px] leading-relaxed max-w-[240px] lg:max-w-[280px] text-center mx-auto [font-family:'Poppins',sans-serif] ${dark ? "text-violet-300" : "text-indigo-100"}`}
         >
           A place where every story creates impact.
         </p>
@@ -202,7 +180,6 @@ function LeftPanel({ dark }) {
   );
 }
 
-/* ───────────────────────────────────────────── */
 function DarkToggle({ dark, onToggle }) {
   return (
     <button
@@ -222,51 +199,37 @@ function DarkToggle({ dark, onToggle }) {
   );
 }
 
-/* ───────────────────────────────────────────── */
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const [toast, setToast] = useState({
-    msg: "",
-    ok: true,
-  });
+  const [toast, setToast] = useState({ msg: "", ok: true });
 
   const navigate = useNavigate();
-
   const { dark, toggleDark } = useDarkMode();
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
-      setToast({
-        msg: "Please fill in all fields!",
-        ok: false,
-      });
+      setToast({ msg: "Please fill in all fields!", ok: false });
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
     if (!emailRegex.test(email)) {
-      setToast({
-        msg: "Please enter a valid email!",
-        ok: false,
-      });
+      setToast({ msg: "Please enter a valid email!", ok: false });
       return;
     }
 
     setLoading(true);
 
     try {
-      const res = await axios.post("https://bloghub-social.onrender.com/api/auth/login", {
-        email,
-        password,
-      });
+      const res = await axios.post(
+        "https://bloghub-social.onrender.com/api/auth/login",
+        { email, password },
+      );
 
       localStorage.setItem("token", res.data.token);
 
@@ -278,23 +241,12 @@ function Login() {
         localStorage.setItem("bio", res.data.user.bio || "");
       }
 
-      setToast({
-        msg: res.data.message,
-        ok: true,
-      });
-
-      setEmail("");
-      setPassword("");
-
       const role = res.data.user?.role;
-
-      setTimeout(() => {
-        if (role === "admin") {
-          navigate("/admin");
-        } else {
-          navigate("/home");
-        }
-      }, 2000);
+      if (role === "admin") {
+        navigate("/admin");
+      } else {
+        navigate("/home");
+      }
     } catch (error) {
       setToast({
         msg: error.response?.data?.message || "Login failed",
@@ -310,13 +262,8 @@ function Login() {
       initial={{ opacity: 0, x: 80 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -80 }}
-      transition={{
-        duration: 0.35,
-        ease: "easeInOut",
-      }}
-      className={`min-h-screen flex items-center justify-center p-4 md:p-8 ${
-        dark ? "bg-[#0d0820]" : "bg-gray-50"
-      }`}
+      transition={{ duration: 0.35, ease: "easeInOut" }}
+      className={`min-h-screen flex items-center justify-center p-4 md:p-8 ${dark ? "bg-[#0d0820]" : "bg-gray-50"}`}
     >
       <DarkToggle dark={dark} onToggle={toggleDark} />
 
@@ -328,30 +275,22 @@ function Login() {
         }`}
       >
         <div
-          className={`flex-1 flex flex-col justify-center px-7 py-9 md:px-12 ${
-            dark ? "bg-[#130d28]" : "bg-white"
-          }`}
+          className={`flex-1 flex flex-col justify-center px-7 py-9 md:px-12 ${dark ? "bg-[#130d28]" : "bg-white"}`}
         >
           <p
-            className={`md:hidden text-center font-extrabold text-[27px] mb-5 ${
-              dark ? "text-violet-400" : "text-indigo-500"
-            }`}
+            className={`md:hidden text-center font-extrabold text-[27px] mb-5 ${dark ? "text-violet-400" : "text-indigo-500"}`}
           >
             VibeNest
           </p>
 
           <h1
-            className={`text-[30px] font-extrabold text-center
-            [font-family:'Poppins',sans-serif]
-            ${dark ? "text-white" : "text-gray-900"}`}
+            className={`text-[30px] font-extrabold text-center [font-family:'Poppins',sans-serif] ${dark ? "text-white" : "text-gray-900"}`}
           >
             Welcome Back
           </h1>
 
           <p
-            className={`text-[13px] text-center mt-1 mb-7
-            [font-family:'Poppins',sans-serif]
-            ${dark ? "text-violet-400" : "text-gray-400"}`}
+            className={`text-[13px] text-center mt-1 mb-7 [font-family:'Poppins',sans-serif] ${dark ? "text-violet-400" : "text-gray-400"}`}
           >
             Login to continue your journey.
           </p>
@@ -405,9 +344,7 @@ function Login() {
 
           <div className="flex items-center justify-center gap-3 mt-6">
             <span
-              className={`text-[13px] ${
-                dark ? "text-violet-500" : "text-gray-500"
-              }`}
+              className={`text-[13px] ${dark ? "text-violet-500" : "text-gray-500"}`}
             >
               You don't have an account yet?
             </span>
