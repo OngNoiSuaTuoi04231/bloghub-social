@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
-const API = "https://bloghub-social.onrender.com/api";
-const SOCKET_URL = "https://bloghub-social.onrender.com";
+const API = "https://bloghub-social-api.onrender.com/api";
+const SOCKET_URL = "https://bloghub-social-api.onrender.com";
 
 function formatTime(dateString) {
   if (!dateString) return "Vừa xong";

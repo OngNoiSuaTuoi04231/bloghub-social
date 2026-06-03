@@ -353,14 +353,14 @@ function Register() {
     setLoading(true);
     setToast({ msg: "", ok: true });
 
-   const API = "https://bloghub-social.onrender.com/api";
+    const API = "https://bloghub-social-api.onrender.com/api";
 
-try {
-  const res = await axios.post(`${API}/auth/register`, {
-    username,
-    email,
-    password,
-  });
+    try {
+      const res = await axios.post(`${API}/auth/register`, {
+        username,
+        email,
+        password,
+      });
 
       setToast({
         msg: res.data.message || "Account created successfully!",

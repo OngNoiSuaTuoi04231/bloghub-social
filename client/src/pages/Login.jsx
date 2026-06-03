@@ -264,7 +264,7 @@ function Login() {
 
     try {
       const res = await axios.post(
-        "https://bloghub-social.onrender.com/api/auth/login",
+        "https://bloghub-social-api.onrender.com/api/auth/login",
         {
           email,
           password,
@@ -388,6 +388,8 @@ function Login() {
                   onClick={() => setShowPassword((p) => !p)}
                   className={dark ? "text-violet-500" : "text-gray-400"}
                 >
+                  {/* FIX: khi showPassword=false (đang ẩn) → hiện "visibility" (mắt mở) để user biết click vào sẽ xem được
+                         khi showPassword=true  (đang hiện) → hiện "visibility_off" (mắt gạch) để user biết click vào sẽ ẩn đi */}
                   <MI name={showPassword ? "visibility_off" : "visibility"} />
                 </button>
               }

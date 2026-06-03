@@ -6,7 +6,7 @@ import VoiceRecorder from "../components/VoiceRecorder";
 import { useDarkMode } from "../context/DarkModeContext";
 
 // Đã loại bỏ localhost và fix lại URL tránh bị lặp "/api" khi fetch
-const SERVER_URL = "https://bloghub-social.onrender.com";
+const API = "https://bloghub-social-api.onrender.com/api";
 
 function MI({ name, className = "" }) {
   return (

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API = "https://bloghub-social.onrender.com/api";
+const API = "https://bloghub-social-api.onrender.com/api";
 
 function MI({ name, className = "" }) {
   return (

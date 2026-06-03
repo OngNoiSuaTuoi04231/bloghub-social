@@ -14,8 +14,8 @@ import {
   Search,
 } from "lucide-react";
 
-const API = "https://bloghub-social.onrender.com/api";
-const SOCKET_URL = "https://bloghub-social.onrender.com";
+const API = "https://bloghub-social-api.onrender.com/api";
+const SOCKET_URL = "https://bloghub-social-api.onrender.com";
 
 export default function Header() {
   const [open, setOpen] = useState(false);

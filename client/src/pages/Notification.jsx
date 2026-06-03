@@ -4,8 +4,8 @@ import { useDarkMode } from "../context/DarkModeContext";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client"; ///
 
-const API = "https://bloghub-social.onrender.com/api";
-const SOCKET_URL = "https://bloghub-social.onrender.com"; // 
+const API = "https://bloghub-social-api.onrender.com/api";
+const SOCKET_URL = "https://bloghub-social-api.onrender.com";
 
 export default function Notification() {
   const { dark } = useDarkMode();
@@ -14,32 +14,27 @@ export default function Notification() {
 
   useEffect(() => {
     const socket = io(SOCKET_URL);
-  
+
     const myId = localStorage.getItem("userId");
-  
+
     if (myId) {
       socket.emit("join_user_room", myId);
     }
-  
+
     socket.on("new_notification", (notification) => {
-      setNotifications((prev) => [
-        notification,
-        ...prev,
-      ]);
+      setNotifications((prev) => [notification, ...prev]);
     });
-  
+
     socket.on("new_notification", (notification) => {
       setNotifications((prev) => {
-        const exists = prev.some(
-          (item) => item._id === notification._id
-        );
-    
+        const exists = prev.some((item) => item._id === notification._id);
+
         if (exists) return prev;
-    
+
         return [notification, ...prev];
       });
     });
-  
+
     return () => {
       socket.disconnect();
     };

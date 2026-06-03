@@ -5,8 +5,8 @@ import { useDarkMode } from "../context/DarkModeContext";
 import axios from "axios";
 import { io } from "socket.io-client";
 
-const API = "https://bloghub-social.onrender.com/api";
-const SOCKET_URL = "https://bloghub-social.onrender.com";
+const API = "https://bloghub-social-api.onrender.com/api";
+const SOCKET_URL = "https://bloghub-social-api.onrender.com";
 
 export default function Profile() {
   const navigate = useNavigate();

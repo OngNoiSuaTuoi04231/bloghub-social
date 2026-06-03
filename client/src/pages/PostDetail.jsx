@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 import { useDarkMode } from "../context/DarkModeContext";
 
-const API = "https://bloghub-social.onrender.com/api";
+const API = "https://bloghub-social-api.onrender.com/api";
 
 export default function PostDetail() {
   const { id } = useParams();
