@@ -160,7 +160,7 @@ export default function CreatePost() {
     }
 
     try {
-      const res = await fetch(`${SERVER_URL}/api/posts/create`, {
+      const res = await fetch(`${API}/posts/create`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
